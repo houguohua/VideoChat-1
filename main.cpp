@@ -185,9 +185,11 @@ void server(){
 
 void captureToYuv(){
 	VideoCapture vcap(0);
-	vcap.set(CV_CAP_PROP_CONVERT_RGB, false);
-	vcap.set(CV_CAP_PROP_FRAME_HEIGHT, 120);
-	vcap.set(CV_CAP_PROP_FRAME_WIDTH, 160);
+	//vcap.set(CV_CAP_PROP_CONVERT_RGB, false);
+	
+	//vcap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('I', 'M', 'C', '3'));
+	//vcap.set(CV_CAP_PROP_FRAME_HEIGHT, 120);
+	//vcap.set(CV_CAP_PROP_FRAME_WIDTH, 160);
 
 	if (!vcap.isOpened()){
 		cout << "Error opening video stream or file" << endl;
@@ -219,8 +221,8 @@ void captureToYuv(){
 #define X265_PARAM_BAD_VALUE (-2)
 	x265_param_parse(param, "fps", "30");
 	x265_param_parse(param, "input-res", "640x480"); //wxh
-	x265_param_parse(param, "bframes", "0");
-	x265_param_parse(param, "rc-lookahead", "20");
+	x265_param_parse(param, "bframes", "3");
+	x265_param_parse(param, "rc-lookahead", "5");
 	x265_param_parse(param, "repeat-headers", "1");
 
 	/* x265_picture_alloc:
@@ -231,6 +233,7 @@ void captureToYuv(){
 	x265_picture pic_orig, pic_out;
 	x265_picture *pic_in = &pic_orig;
 	x265_picture *pic_recon = &pic_out;
+
 
 
 	/***
@@ -262,9 +265,12 @@ void captureToYuv(){
 
 	while (1){
 
-		Mat frame;
+		Mat readIn;
 
-		bool bSuccess = vcap.read(frame); // read a new frame from video
+		bool bSuccess = vcap.read(readIn); // read a new frame from video
+
+		Mat frame = readIn.clone();
+		cvtColor(readIn, frame, CV_BGR2YUV_I420);
 
 		if (!bSuccess) //if not success, break loop
 		{
@@ -274,8 +280,22 @@ void captureToYuv(){
 
 		imshow("MyVideo", frame); //show the frame in "MyVideo" window
 
+		
+		
+		/*testFrame.data[frame_width*frame_height/2+frame_width/2] = 255;
+		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+1] = 255;;
+		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+2] = 255;;
+		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+3] = 255;;*/
 		int depth = 8;
-		int colorSpace = 1;
+		int colorSpace = X265_CSP_I420; // wat is dit? Welke waarden mogen we hier meegeven?
+
+		std::ofstream testFile("output.yuv");
+		for (int i = 0; i < (frame.dataend-frame.datastart)/sizeof(uchar); i++){
+			testFile << frame.data[i];
+		}
+		
+		
+
 
 		uint32_t pixelbytes = depth > 8 ? 2 : 1;
 		pic_orig.colorSpace = colorSpace;
@@ -284,8 +304,8 @@ void captureToYuv(){
 		pic_orig.stride[1] = pic_orig.stride[0] >> x265_cli_csps[colorSpace].width[1];
 		pic_orig.stride[2] = pic_orig.stride[0] >> x265_cli_csps[colorSpace].width[2];
 		pic_orig.planes[0] = frame.data;
-		pic_orig.planes[1] = (char*)pic_orig.planes[0] + pic_orig.stride[0] * frame_height;
-		pic_orig.planes[2] = (char*)pic_orig.planes[1] + pic_orig.stride[1] * (frame_height >> x265_cli_csps[colorSpace].height[1]);
+		pic_orig.planes[1] = (char*)pic_orig.planes[0] + (pic_orig.stride[0] * frame_height);
+		pic_orig.planes[2] = (char*)pic_orig.planes[1] + (pic_orig.stride[1] * (frame_height >> x265_cli_csps[colorSpace].height[1]));
 
 		int encoded = x265_encoder_encode(encoder, &pp_nal, &pi_nal, pic_in, pic_recon);
 
