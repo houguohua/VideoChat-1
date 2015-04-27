@@ -188,8 +188,8 @@ void captureToYuv(){
 	//vcap.set(CV_CAP_PROP_CONVERT_RGB, false);
 	
 	//vcap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('I', 'M', 'C', '3'));
-	//vcap.set(CV_CAP_PROP_FRAME_HEIGHT, 120);
-	//vcap.set(CV_CAP_PROP_FRAME_WIDTH, 160);
+	vcap.set(CV_CAP_PROP_FRAME_HEIGHT, 120);
+	vcap.set(CV_CAP_PROP_FRAME_WIDTH, 160);
 
 	if (!vcap.isOpened()){
 		cout << "Error opening video stream or file" << endl;
@@ -220,7 +220,7 @@ void captureToYuv(){
 #define X265_PARAM_BAD_NAME  (-1)
 #define X265_PARAM_BAD_VALUE (-2)
 	x265_param_parse(param, "fps", "30");
-	x265_param_parse(param, "input-res", "640x480"); //wxh
+	x265_param_parse(param, "input-res", "160x120"); //wxh
 	x265_param_parse(param, "bframes", "3");
 	x265_param_parse(param, "rc-lookahead", "5");
 	x265_param_parse(param, "repeat-headers", "1");
@@ -289,11 +289,11 @@ void captureToYuv(){
 		int depth = 8;
 		int colorSpace = X265_CSP_I420; // wat is dit? Welke waarden mogen we hier meegeven?
 
-		std::ofstream testFile("output.yuv");
-		for (int i = 0; i < (frame.dataend-frame.datastart)/sizeof(uchar); i++){
-			testFile << frame.data[i];
-		}
-		
+		//std::ofstream testFile("output.yuv");
+		//for (int i = 0; i < (frame.dataend-frame.datastart)/sizeof(uchar); i++){
+		//	testFile << frame.data[i];
+		//}
+		//
 		
 
 
