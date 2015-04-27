@@ -185,6 +185,10 @@ void server(){
 
 void captureToYuv(){
 	VideoCapture vcap(0);
+	vcap.set(CV_CAP_PROP_CONVERT_RGB, false);
+	vcap.set(CV_CAP_PROP_FRAME_HEIGHT, 120);
+	vcap.set(CV_CAP_PROP_FRAME_WIDTH, 160);
+
 	if (!vcap.isOpened()){
 		cout << "Error opening video stream or file" << endl;
 		return;
@@ -307,11 +311,12 @@ void captureToYuv(){
 }
 
 int main(int argc, char** argv){
-	thread t2(client);
-	t2.join();
-	thread t1(server);
-	t1.join();
-	
+	//thread t2(client);
+	//t2.join();
+	//thread t1(server);
+	//t1.join();
+	//
+	captureToYuv();
 	return 0;
 	//Mat matimg = imread("C:/Users/kiani/Downloads/fruit.jpg");
 	//string input;
