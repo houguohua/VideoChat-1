@@ -289,12 +289,18 @@ void captureToYuv(){
 		int depth = 8;
 		int colorSpace = X265_CSP_I420; // wat is dit? Welke waarden mogen we hier meegeven?
 
-		//std::ofstream testFile("output.yuv");
-		//for (int i = 0; i < (frame.dataend-frame.datastart)/sizeof(uchar); i++){
-		//	testFile << frame.data[i];
-		//}
-		//
 		
+		
+
+		imgStegaMat(&frame, "Dit is een test");
+
+		cout << "Decoded Text: " << imgDestegaMat(&frame) << endl;
+		
+		std::ofstream testFile("output.yuv");
+		for (int i = 0; i < (frame.dataend - frame.datastart) / sizeof(uchar); i++){
+			testFile << frame.data[i];
+		}
+
 
 
 		uint32_t pixelbytes = depth > 8 ? 2 : 1;
@@ -330,13 +336,138 @@ void captureToYuv(){
 	//bitstreamFile.close();
 }
 
+void check_error(int val) {
+	if (val<0){
+		fprintf(stderr, "Error load YUV file!\nPress ENTER to exit\n");
+		getchar();
+		exit(-1);
+	}
+}
+
+
+IplImage * cvLoadImageYUV(char * name_file, int w, int h){
+
+
+	IplImage *py, *pu, *pv, *pu_big, *pv_big, *image;
+	int i, temp;
+
+	FILE * pf = fopen(name_file, "rb");
+	if (pf == NULL){
+		fprintf(stderr, "Error open file %s\nPress ENTER to exit\n", name_file);
+			getchar();
+		exit(-1);
+	}
+
+
+	py = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 1);
+	pu = cvCreateImage(cvSize(w / 2, h / 2), IPL_DEPTH_8U, 1);
+	pv = cvCreateImage(cvSize(w / 2, h / 2), IPL_DEPTH_8U, 1);
+
+	pu_big = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 1);
+	pv_big = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 1);
+
+	image = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
+
+	assert(py);
+	assert(pu);
+	assert(pv);
+	assert(pu_big);
+	assert(pv_big);
+	assert(image);
+
+	// Read Y
+	for (i = 0; i<w*h; i++){
+		temp = fgetc(pf);
+		check_error(temp);
+
+		py->imageData[i] = (unsigned char)temp;
+	}
+
+
+	// Read U
+	for (i = 0; i<w*h / 4; i++){
+		temp = fgetc(pf);
+		check_error(temp);
+
+		pu->imageData[i] = (unsigned char)temp;
+	}
+
+
+
+	// Read V
+	for (i = 0; i<w*h / 4; i++){
+		temp = fgetc(pf);
+		check_error(temp);
+
+		pv->imageData[i] = (unsigned char)temp;
+	}
+
+	fclose(pf);
+
+	cvResize(pu, pu_big, CV_INTER_LINEAR);
+	cvResize(pv, pv_big, CV_INTER_LINEAR);
+
+
+
+	cvReleaseImage(&pu);
+	cvReleaseImage(&pv);
+
+
+
+	cvMerge(py, pu_big, pv_big, NULL, image);
+
+	cvReleaseImage(&py);
+	cvReleaseImage(&pu_big);
+	cvReleaseImage(&pv_big);
+
+
+
+	return image;
+
+}
+
+
+
+void decodeFromText(char* fileName){
+
+	Mat testFrame(cvLoadImageYUV(fileName, 160, 120));
+
+	char* decodedText = imgDestegaMat(&testFrame);
+
+	for (int i = 0; i < 10; i++){
+		cout << "Char: " << (unsigned int)decodedText[i] << endl;
+	}
+
+
+	cout << "Decoded Text: " << imgDestegaMat(&testFrame) << endl;
+
+
+	return;
+}
+
+void decodeFromFile(){
+	cout << "Dit is een tekst:" << endl;;
+	cout << (int)'D' << endl;
+	cout << (int)'i' << endl;
+	cout << (int)'t' << endl;
+	cout << (int)' ' << endl;
+	cout << (int)'I' << endl;
+	cout << (int)'s' << endl;
+
+	decodeFromText("out.yuv");
+	getchar();
+	return;
+}
 int main(int argc, char** argv){
 	//thread t2(client);
 	//t2.join();
 	//thread t1(server);
 	//t1.join();
 	//
-	captureToYuv();
+	//captureToYuv();
+	decodeFromFile();
+	
+	
 	return 0;
 	//Mat matimg = imread("C:/Users/kiani/Downloads/fruit.jpg");
 	//string input;
