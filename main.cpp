@@ -221,10 +221,13 @@ void captureToYuv(){
 #define X265_PARAM_BAD_VALUE (-2)
 	x265_param_parse(param, "fps", "30");
 	x265_param_parse(param, "input-res", "160x120"); //wxh
-	x265_param_parse(param, "bframes", "3");
+	//x265_param_parse(param, "bframes", "3");
 	x265_param_parse(param, "rc-lookahead", "5");
 	x265_param_parse(param, "repeat-headers", "1");
+	x265_param_parse(param, "-I", "1");
+	x265_param_parse(param, "-i", "1");
 
+	x265_param_parse(param, "qp", "0");
 	/* x265_picture_alloc:
 	*  Allocates an x265_picture instance. The returned picture structure is not
 	*  special in any way, but using this method together with x265_picture_free()
@@ -278,7 +281,7 @@ void captureToYuv(){
 
 		}
 
-		imshow("MyVideo", frame); //show the frame in "MyVideo" window
+		imshow("MyVideo", readIn); //show the frame in "MyVideo" window
 
 		
 		
@@ -294,14 +297,24 @@ void captureToYuv(){
 
 		imgStegaMat(&frame, "Dit is een test");
 
-		cout << "Decoded Text: " << imgDestegaMat(&frame) << endl;
 		
-		std::ofstream testFile("output.yuv");
+		
+		/*std::ofstream testFile("output.yuv");
 		for (int i = 0; i < (frame.dataend - frame.datastart) / sizeof(uchar); i++){
 			testFile << frame.data[i];
+			frame.data[i] = 0;
 		}
 
+		testFile.flush();
+		testFile.close();
+		
+		Mat testFrame(160, 120, CV_16SC3);
+		std::ifstream inFile("output.yuv");
+		for (int i = 0; i < (testFrame.dataend - testFrame.datastart) / sizeof(uchar); i++){
+			inFile >> testFrame.data[i];
+		}*/
 
+		cout << "Decoded Text: " << imgDestegaMat(&frame) << endl;
 
 		uint32_t pixelbytes = depth > 8 ? 2 : 1;
 		pic_orig.colorSpace = colorSpace;
@@ -333,7 +346,7 @@ void captureToYuv(){
 
 	}
 
-	//bitstreamFile.close();
+	bitstreamFile.close();
 }
 
 void check_error(int val) {
@@ -430,7 +443,7 @@ IplImage * cvLoadImageYUV(char * name_file, int w, int h){
 
 void decodeFromText(char* fileName){
 
-	Mat testFrame(cvLoadImageYUV(fileName, 160, 120));
+	/*Mat testFrame(cvLoadImageYUV(fileName, 160, 120));
 
 	char* decodedText = imgDestegaMat(&testFrame);
 
@@ -440,24 +453,26 @@ void decodeFromText(char* fileName){
 
 
 	cout << "Decoded Text: " << imgDestegaMat(&testFrame) << endl;
+*/
+	Mat testFrame(160, 120, CV_16SC3);
+	std::ifstream inFile(fileName);
+	for (int i = 0; i < (testFrame.dataend - testFrame.datastart) / sizeof(uchar); i++){
+		inFile >> testFrame.data[i];
+	}
 
+	cout << "Decoded Text: " << imgDestegaMat(&testFrame) << endl;
 
 	return;
 }
 
 void decodeFromFile(){
-	cout << "Dit is een tekst:" << endl;;
-	cout << (int)'D' << endl;
-	cout << (int)'i' << endl;
-	cout << (int)'t' << endl;
-	cout << (int)' ' << endl;
-	cout << (int)'I' << endl;
-	cout << (int)'s' << endl;
-
+	cout << "Input Text: Dit is een test:" << endl;;
+	
 	decodeFromText("out.yuv");
 	getchar();
 	return;
 }
+
 int main(int argc, char** argv){
 	//thread t2(client);
 	//t2.join();
