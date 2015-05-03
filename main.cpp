@@ -330,6 +330,7 @@ void captureToYuv(){
 		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
 		{
 			cout << "esc key is pressed by user" << endl;
+			vcap.~OpenCVWebcam();
 			break;
 
 		}

@@ -39,7 +39,7 @@ OpenCVWebcam::OpenCVWebcam()
 	}
 
 	OpenCVWebcam::~OpenCVWebcam(){
-
+		stream1->release();
 	}
 
 	Mat OpenCVWebcam::capture(){
