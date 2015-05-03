@@ -14,6 +14,7 @@
 #include <thread>
 #include <bitset>
 #include "SteganoRaw.h"
+#include "OpenCVWebcam.h"
 #include "encoder.h"
 #include "yuv.h"
 #include "param.h"
@@ -48,16 +49,15 @@ void client(){
 	return 1;
 	}*/
 
-	VideoCapture stream1(0);
-	stream1.set(CV_CAP_PROP_CONVERT_RGB, false);
-	stream1.set(CV_CAP_PROP_FRAME_HEIGHT, 120);
-	stream1.set(CV_CAP_PROP_FRAME_WIDTH, 160);
+	OpenCVWebcam stream1;
+	stream1.setWidth(120);
+	stream1.setHeight(160);
 
 
 	while (1){
 		Mat cameraFrame;
 
-		stream1.read(cameraFrame);
+		cameraFrame = stream1.capture();
 
 		/*imshow("Sending", cameraFrame);*/
 
@@ -184,21 +184,15 @@ void server(){
 
 
 void captureToYuv(){
-	VideoCapture vcap(0);
-	//vcap.set(CV_CAP_PROP_CONVERT_RGB, false);
-	
-	//vcap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('I', 'M', 'C', '3'));
-	vcap.set(CV_CAP_PROP_FRAME_HEIGHT, 120);
-	vcap.set(CV_CAP_PROP_FRAME_WIDTH, 160);
+	OpenCVWebcam vcap;
 
-	if (!vcap.isOpened()){
-		cout << "Error opening video stream or file" << endl;
-		return;
-	}
+	vcap.setWidth(160);
+	vcap.setHeight(120);
 
-	int frame_width = vcap.get(CV_CAP_PROP_FRAME_WIDTH);
-	int frame_height = vcap.get(CV_CAP_PROP_FRAME_HEIGHT);
-	int fps = vcap.get(CV_CAP_PROP_FPS);
+
+	int frame_width = vcap.getWidth();
+	int frame_height = vcap.getHeight();
+	int fps = vcap.getFPS();
 
 
 	/* x265_param_alloc:
@@ -270,17 +264,12 @@ void captureToYuv(){
 
 		Mat readIn;
 
-		bool bSuccess = vcap.read(readIn); // read a new frame from video
+		readIn = vcap.capture(); // read a new frame from video
 
 		Mat frame = readIn.clone();
 		cvtColor(readIn, frame, CV_BGR2YUV_I420);
 
-		if (!bSuccess) //if not success, break loop
-		{
-			cout << "ERROR: Cannot read a frame from video file" << endl;
-
-		}
-
+		namedWindow("MyVideo", WINDOW_AUTOSIZE);
 		imshow("MyVideo", readIn); //show the frame in "MyVideo" window
 
 		
@@ -295,8 +284,8 @@ void captureToYuv(){
 		
 		
 
-		imgStegaMat(&frame, "Dit is een test");
-
+		/*imgStegaMat(&frame, "Dit is een test");
+*/
 		
 		
 		/*std::ofstream testFile("output.yuv");
@@ -314,7 +303,8 @@ void captureToYuv(){
 			inFile >> testFrame.data[i];
 		}*/
 
-		cout << "Decoded Text: " << imgDestegaMat(&frame) << endl;
+		//cout << "Decoded Text: " << imgDestegaMat(&frame) << endl;
+
 
 		uint32_t pixelbytes = depth > 8 ? 2 : 1;
 		pic_orig.colorSpace = colorSpace;
@@ -337,7 +327,7 @@ void captureToYuv(){
 				pp_nal++;
 			}
 		}
-		if (waitKey(10) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
+		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
 		{
 			cout << "esc key is pressed by user" << endl;
 			break;
@@ -473,29 +463,24 @@ void decodeFromFile(){
 	return;
 }
 
+void yuvDemoStegano(){
+
+	captureToYuv();
+}
+
 int main(int argc, char** argv){
 	//thread t2(client);
 	//t2.join();
 	//thread t1(server);
 	//t1.join();
 	//
-	//captureToYuv();
-	decodeFromFile();
+	//yuvDemoStegano();
+	captureToYuv();
+	//decodeFromFile();
 	
 	
 	return 0;
-	//Mat matimg = imread("C:/Users/kiani/Downloads/fruit.jpg");
-	//string input;
-	//getline(cin, input);
-	//while (input != "stop"){
-	//	char* toEncode = (char*) input.c_str();
-	//	printf("%-15s %s\n", "Encoding:", toEncode);
-	//	imgStegaMat(&matimg, toEncode);
-
-	//	printf("%-15s %s\n", "Result decoder:", imgDestegaMat(&matimg));
-	//	getline(cin, input);
-	//	printf("\n\n");
-	//}
+	
 	//
 	//
 	//getchar();
