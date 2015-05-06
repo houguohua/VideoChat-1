@@ -17,7 +17,19 @@
 #include "encoder.h"
 #include "yuv.h"
 #include "param.h"
+#include "x265Encoder.h"
+extern "C"
+{
+	#include <libavutil/opt.h>
+	#include <libavcodec/avcodec.h>
+	#include <libavutil/channel_layout.h>
+	#include <libavutil/common.h>
+	#include <libavutil/imgutils.h>
+	#include <libavutil/mathematics.h>
+	#include <libavutil/samplefmt.h>
+}
 
+#pragma comment(lib, "avcodec.lib")
 
 using namespace cv;
 using namespace std;
@@ -183,7 +195,110 @@ void server(){
 
 
 
+
+static AVFrame * icv_alloc_picture_FFMPEG(int pix_fmt, int width, int height, bool alloc)
+{
+	AVFrame * picture;
+	uint8_t * picture_buf;
+	int size;
+
+	picture = av_frame_alloc();
+	if (!picture)
+		return NULL;
+	size = avpicture_get_size((PixelFormat)pix_fmt, width, height);
+	if (alloc)
+	{
+		picture_buf = (uint8_t *)malloc(size);
+		if (!picture_buf)
+		{
+			avcodec_free_frame(&picture);
+			std::cout << "picture buff = NULL" << std::endl;
+			return NULL;
+		}
+		avpicture_fill((AVPicture *)picture, picture_buf, (PixelFormat)pix_fmt, width, height);
+	}
+	return picture;
+}
+
+
+
+void video_decode(x265_nal *pp_nal, uint32_t pi_nal) {
+	AVCodec *codec;
+	AVCodecContext *av_codec_context = NULL;
+	avcodec_register_all();
+
+	int frame_count;
+	FILE *f;
+	AVFrame *frame;
+	AVPacket avpkt;
+	av_init_packet(&avpkt);
+
+	codec = avcodec_find_decoder(AV_CODEC_ID_H265);
+	if (!codec) {
+		fprintf(stderr, "Codec not found\n");
+		exit(1);
+	}
+
+	av_codec_context = avcodec_alloc_context3(codec);
+	if (!av_codec_context) {
+		fprintf(stderr, "Could not allocate video codec context\n");
+		exit(1);
+	}
+	av_codec_context->width = 160;
+	av_codec_context->height = 120;
+	av_codec_context->extradata = NULL;
+	av_codec_context->pix_fmt = PIX_FMT_YUV420P;
+	if (codec->capabilities & CODEC_CAP_TRUNCATED)
+		av_codec_context->flags |= CODEC_FLAG_TRUNCATED; /* We may send incomplete frames */
+	if (codec->capabilities & CODEC_FLAG2_CHUNKS)
+		av_codec_context->flags |= CODEC_FLAG2_CHUNKS;
+
+	/* open it */
+	if (avcodec_open2(av_codec_context, codec, NULL) < 0) {
+		fprintf(stderr, "Could not open codec\n");
+		exit(1);
+	}
+	
+
+	AVFrame *av_frame_ = icv_alloc_picture_FFMPEG(PIX_FMT_YUV420P, 160, 120, true);
+	AVFrame *av_frame_RGB_ = icv_alloc_picture_FFMPEG(PIX_FMT_RGB24, 160, 120, true);
+
+
+	char *rgb_buffer = new char[120*160*3];
+
+	frame_count = 0;
+	int got_frame;
+
+	AVPacket av_packet;
+	av_new_packet(&av_packet, pp_nal->sizeBytes);
+	av_packet.data = (uint8_t *) pp_nal->payload;
+	av_packet.size = pp_nal->sizeBytes;
+	
+	avcodec_decode_video2(av_codec_context, av_frame_, &got_frame, &av_packet);
+	
+	/* some codecs, such as MPEG, transmit the I and P frame with a
+	latency of one frame. You must do the following to have a
+	chance to get the last frame of the video */
+	avpkt.data = NULL;
+	avpkt.size = 0;
+	avcodec_close(av_codec_context);
+	av_free(av_codec_context);
+	//av_frame_free(&frame);
+}
+
+
+
+
+
 void captureToYuv(){
+	/* must be called before using avcodec lib */
+	//avcodec_init();
+	/* register all the codecs */
+	avcodec_register_all();
+	AVCodec *codec;
+	codec = avcodec_find_decoder(AV_CODEC_ID_H265);
+
+
 	VideoCapture vcap(0);
 	//vcap.set(CV_CAP_PROP_CONVERT_RGB, false);
 	
@@ -200,60 +315,14 @@ void captureToYuv(){
 	int frame_height = vcap.get(CV_CAP_PROP_FRAME_HEIGHT);
 	int fps = vcap.get(CV_CAP_PROP_FPS);
 
-
-	/* x265_param_alloc:
-	*  Allocates an x265_param instance. The returned param structure is not
-	*  special in any way, but using this method together with x265_param_free()
-	*  and x265_param_parse() to set values by name allows the application to treat
-	*  x265_param as an opaque data struct for version safety */
-	x265_param *param = x265_param_alloc();
-
-	/*      returns 0 on success, negative on failure (e.g. invalid preset/tune name). */
-	x265_param_default_preset(param, "ultrafast", "zerolatency");
-
-	/* x265_param_parse:
-	*  set one parameter by name.
-	*  returns 0 on success, or returns one of the following errors.
-	*  note: BAD_VALUE occurs only if it can't even parse the value,
-	*  numerical range is not checked until x265_encoder_open().
-	*  value=NULL means "true" for boolean options, but is a BAD_VALUE for non-booleans. */
-#define X265_PARAM_BAD_NAME  (-1)
-#define X265_PARAM_BAD_VALUE (-2)
-	x265_param_parse(param, "fps", "30");
-	x265_param_parse(param, "input-res", "160x120"); //wxh
-	x265_param_parse(param, "bframes", "3");
-	x265_param_parse(param, "rc-lookahead", "5");
-	x265_param_parse(param, "repeat-headers", "1");
-
-	/* x265_picture_alloc:
-	*  Allocates an x265_picture instance. The returned picture structure is not
-	*  special in any way, but using this method together with x265_picture_free()
-	*  and x265_picture_init() allows some version safety. New picture fields will
-	*  always be added to the end of x265_picture */
-	x265_picture pic_orig, pic_out;
-	x265_picture *pic_in = &pic_orig;
-	x265_picture *pic_recon = &pic_out;
-
-
-
-	/***
-	* Initialize an x265_picture structure to default values. It sets the pixel
-	* depth and color space to the encoder's internal values and sets the slice
-	* type to auto - so the lookahead will determine slice type.
+	/*
+	* Here we init the x265_encoder with all the neccesary parameters.
 	*/
-	x265_picture_init(param, pic_in);
-
-
-
-	/* x265_encoder_encode:
-	*      encode one picture.
-	*      *pi_nal is the number of NAL units outputted in pp_nal.
-	*      returns negative on error, zero if no NAL units returned.
-	*      the payloads of all output NALs are guaranteed to be sequential in memory. */
+	initEncoder(frame_width, frame_height);
 	x265_nal *pp_nal;
 	uint32_t pi_nal;
-	x265_encoder *encoder = x265_encoder_open(param);
-	//x265_encoder_encode(encoder, &pp_nal, &pi_nal, pic_in, pic_out);
+
+
 
 	std::fstream bitstreamFile;
 	bitstreamFile.open("testout.hevc", std::fstream::binary | std::fstream::out);
@@ -279,17 +348,6 @@ void captureToYuv(){
 		}
 
 		imshow("MyVideo", frame); //show the frame in "MyVideo" window
-
-		
-		
-		/*testFrame.data[frame_width*frame_height/2+frame_width/2] = 255;
-		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+1] = 255;;
-		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+2] = 255;;
-		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+3] = 255;;*/
-		int depth = 8;
-		int colorSpace = X265_CSP_I420; // wat is dit? Welke waarden mogen we hier meegeven?
-
-		
 		
 
 		imgStegaMat(&frame, "Dit is een test");
@@ -301,25 +359,18 @@ void captureToYuv(){
 			testFile << frame.data[i];
 		}
 
+		//Encode a frame using the x265_encoder
+		encodeFrame(&frame);
 
-
-		uint32_t pixelbytes = depth > 8 ? 2 : 1;
-		pic_orig.colorSpace = colorSpace;
-		pic_orig.bitDepth = depth;
-		pic_orig.stride[0] = frame_width * pixelbytes;
-		pic_orig.stride[1] = pic_orig.stride[0] >> x265_cli_csps[colorSpace].width[1];
-		pic_orig.stride[2] = pic_orig.stride[0] >> x265_cli_csps[colorSpace].width[2];
-		pic_orig.planes[0] = frame.data;
-		pic_orig.planes[1] = (char*)pic_orig.planes[0] + (pic_orig.stride[0] * frame_height);
-		pic_orig.planes[2] = (char*)pic_orig.planes[1] + (pic_orig.stride[1] * (frame_height >> x265_cli_csps[colorSpace].height[1]));
-
-		int encoded = x265_encoder_encode(encoder, &pp_nal, &pi_nal, pic_in, pic_recon);
+		pp_nal = get_ppnal();
+		pi_nal = get_pinal();
 
 		if (pi_nal){
 			for (uint32_t i = 0; i < pi_nal; i++)
 			{
 				//cout << pp_nal->payload << endl;
 				bitstreamFile.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
+				video_decode(pp_nal, pi_nal);
 				//totalbytes += nal->sizeBytes;
 				pp_nal++;
 			}
@@ -464,8 +515,8 @@ int main(int argc, char** argv){
 	//thread t1(server);
 	//t1.join();
 	//
-	//captureToYuv();
-	decodeFromFile();
+	captureToYuv();
+	//decodeFromFile();
 	
 	
 	return 0;
