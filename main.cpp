@@ -227,11 +227,7 @@ void serverYUV(){
 		
 		bitstreamFile.write((const char*)img, (int)recv_size);
 
-		std::fstream bitstreamFile2;
-		bitstreamFile2.open("nal" + std::to_string(teller) + "_recv.hevc", std::fstream::binary | std::fstream::out);
-		bitstreamFile2.write((const char*)img, (int)recv_size);
-		bitstreamFile2.close();
-		teller++;
+		
 
 		/*Mat imageToShow = Mat::zeros(120, 160, CV_8UC3);
 		imageToShow.data = img;
@@ -420,12 +416,7 @@ void captureToYuv(){
 //				std::cout << pp_nal->sizeBytes << endl;
 				bitstreamFile.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
 				//totalbytes += nal->sizeBytes;
-				std::fstream bitstreamFile2;
-				bitstreamFile2.open("nal"+std::to_string(teller) +".hevc", std::fstream::binary | std::fstream::out);
-				bitstreamFile2.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
-				bitstreamFile2.close();
 				
-				teller++;
 				//cout << "Test" << endl;
 
 				//receive chunks of data
