@@ -33,13 +33,13 @@ void client(){
 
 	//CameraReader camera = new CameraReader();
 
-	cout << "Enter ip of server" << endl;
+	std::cout << "Enter ip of server" << endl;
 	string ipaddress;
 	cin >> ipaddress;
-	cout << "Server ip: " << "tcp://" + ipaddress + ":9000" << endl;
-	cout << "Initialize socket" << endl;
+	std::cout << "Server ip: " << "tcp://" + ipaddress + ":9000" << endl;
+	std::cout << "Initialize socket" << endl;
 	rc = zmq_connect(socket, ("tcp://" + ipaddress + ":9000").c_str()); /*127.0.0.1*/
-	cout << "RC: " + rc << endl;
+	std::cout << "RC: " + rc << endl;
 
 
 	//initialize camera
@@ -88,7 +88,7 @@ void client(){
 			}
 
 			if (rc == -1){
-				cout << "Error while sending" << endl;
+				std::cout << "Error while sending" << endl;
 				return;
 			}
 		}
@@ -99,67 +99,147 @@ void client(){
 	zmq_ctx_destroy(context);
 }
 
-void server(){
+//void server(){
+//
+//	//init socket	
+//	int rc = 0;
+//	uchar* img = (uchar*)malloc(img_size*sizeof(uchar));
+//	char buf[BUFLEN];
+//	void *context = zmq_ctx_new();
+//
+//	void *socket = zmq_socket(context, ZMQ_PAIR);
+//
+//
+//
+//
+//	cout << "Initialize the socket" << endl;
+//	rc = zmq_bind(socket, "tcp://*:9000");
+//	if (rc == -1){
+//		cout << "Initialization failed." << endl;
+//		return;
+//	}
+//
+//
+//
+//	while (1){
+//		//cout << "Test" << endl;
+//
+//		//receive chunks of data
+//
+//		for (int i = 0; i < img_size / BUFLEN + 1; i++){
+//			if (i == 0){
+//				rc = zmq_recv(socket, buf, BUFLEN, 0);
+//			}
+//			else if ((i + 1)*BUFLEN <= img_size){
+//				rc = zmq_recv(socket, buf, BUFLEN, ZMQ_RCVMORE);
+//			}
+//			else{
+//				rc = zmq_recv(socket, buf, (img_size % BUFLEN), 0);
+//
+//			}
+//			if (rc == -1){
+//				cout << "Error receiving image." << endl;
+//				break;
+//			}
+//
+//			if ((i + 1)*BUFLEN <= img_size){
+//				img = (uchar*)realloc(img, (i + 1)*BUFLEN *sizeof(uchar));
+//				memcpy(img + i*BUFLEN, buf, BUFLEN);
+//			}
+//			else{
+//				memcpy(img + ((i)*BUFLEN), buf, img_size%BUFLEN);
+//			}
+//
+//		}
+//
+//
+//		Mat imageToShow = Mat::zeros(120, 160, CV_8UC3);
+//		imageToShow.data = img;
+//		imshow("Afbeelding", imageToShow);
+//		if (waitKey(1) > 0)
+//			break;
+//
+//
+//
+//		////convert data to a frame
+//		//IplImage* frame= cvCreateImage(cvSize(640,480), IPL_DEPTH_8U, 1);
+//		////memcpy(frame->imageData, img, IMG_SIZE);
+//
+//		//
+//		////show frame
+//		//cvNamedWindow("Received", CV_WINDOW_AUTOSIZE);
+//		//cvShowImage("Received", frame);
+//		//waitKey(0);
+//		//if(waitKey(0) >= 0) break;
+//
+//
+//
+//
+//	}
+//
+//	zmq_close(socket);
+//	zmq_ctx_destroy(context);
+//}
+//
 
-	//init socket	
+void serverYUV(){
+
+	//init socket
 	int rc = 0;
-	uchar* img = (uchar*)malloc(img_size*sizeof(uchar));
+	uchar* recv_size = (uchar*)malloc(8 * sizeof(byte));
+	uint8_t * img = (uint8_t*)malloc(img_size*sizeof(byte));
 	char buf[BUFLEN];
+	
 	void *context = zmq_ctx_new();
 
 	void *socket = zmq_socket(context, ZMQ_PAIR);
 
 
-
-
-	cout << "Initialize the socket" << endl;
-	rc = zmq_bind(socket, "tcp://*:9000");
-	if (rc == -1){
-		cout << "Initialization failed." << endl;
+	std::fstream bitstreamFile;
+	bitstreamFile.open("serverSide.hevc", std::fstream::binary | std::fstream::out);
+	if (!bitstreamFile)
+	{
+		x265_log(NULL, X265_LOG_ERROR, "failed to open bitstream file <%s> for writing\n", "testout.hevc");
 		return;
 	}
 
-	
+	std::cout << "Initialize the socket" << endl;
+	rc = zmq_bind(socket, "tcp://*:9000");
+	if (rc == -1){
+		std::cout << "Initialization failed." << endl;
+		return;
+	}
 
+
+	int teller = 0;
 	while (1){
 		//cout << "Test" << endl;
 
 		//receive chunks of data
+
+		rc = zmq_recv(socket, buf, 8, 0);
+		memcpy(&recv_size, buf, 8);
+
+		img = (uchar*)realloc(img, ((int)recv_size)*sizeof(uchar));
 		
-		for (int i = 0; i < img_size / BUFLEN + 1; i++){
-			if (i == 0){
-				rc = zmq_recv(socket, buf, BUFLEN, 0);
-			}
-			else if ((i + 1)*BUFLEN <= img_size){
-				rc = zmq_recv(socket, buf, BUFLEN, ZMQ_RCVMORE);
-			}
-			else{
-				rc = zmq_recv(socket, buf, (img_size % BUFLEN), 0);
+		rc = zmq_recv(socket, img, (int)recv_size, 0);
 
-			}
-			if (rc == -1){
-				cout << "Error receiving image." << endl;
-				break;
-			}
+		
+		bitstreamFile.write((const char*)img, (int)recv_size);
 
-			if ((i + 1)*BUFLEN <= img_size){
-				img = (uchar*)realloc(img, (i + 1)*BUFLEN *sizeof(uchar));
-				memcpy(img + i*BUFLEN, buf, BUFLEN);
-			}
-			else{
-				memcpy(img + ((i)*BUFLEN), buf, img_size%BUFLEN);
-			}
-			
-		}
+		std::fstream bitstreamFile2;
+		bitstreamFile2.open("nal" + std::to_string(teller) + "_recv.hevc", std::fstream::binary | std::fstream::out);
+		bitstreamFile2.write((const char*)img, (int)recv_size);
+		bitstreamFile2.close();
+		teller++;
 
-
-		Mat imageToShow = Mat::zeros(120, 160, CV_8UC3);
+		/*Mat imageToShow = Mat::zeros(120, 160, CV_8UC3);
 		imageToShow.data = img;
-		imshow("Afbeelding", imageToShow);
-		if (waitKey(1)>0)
+		cv::imshow("Afbeelding", imageToShow);
+		if (waitKey(1) > 0)
 			break;
 
-
+*/
 
 		////convert data to a frame
 		//IplImage* frame= cvCreateImage(cvSize(640,480), IPL_DEPTH_8U, 1);
@@ -176,11 +256,10 @@ void server(){
 
 
 	}
-
+	bitstreamFile.close();
 	zmq_close(socket);
 	zmq_ctx_destroy(context);
 }
-
 
 
 void captureToYuv(){
@@ -192,6 +271,23 @@ void captureToYuv(){
 	int frame_width = vcap.getWidth();
 	int frame_height = vcap.getHeight();
 	int fps = vcap.getFPS();
+
+	//initialize the socket
+	int rc = 0;
+	void *context = zmq_ctx_new();
+	void *socket = zmq_socket(context, ZMQ_PAIR);
+
+	//CameraReader camera = new CameraReader();
+
+	std::cout << "Enter ip of server" << endl;
+	string ipaddress;
+	cin >> ipaddress;
+	std::cout << "Server ip: " << "tcp://" + ipaddress + ":9000" << endl;
+	std::cout << "Initialize socket" << endl;
+	rc = zmq_connect(socket, ("tcp://" + ipaddress + ":9000").c_str()); /*127.0.0.1*/
+	std::cout << "RC: " + rc << endl;
+
+
 
 	//x265 encoder initialisation
 
@@ -251,7 +347,7 @@ void captureToYuv(){
 	uint32_t pi_nal;
 	x265_encoder *encoder = x265_encoder_open(param);
 	//x265_encoder_encode(encoder, &pp_nal, &pi_nal, pic_in, pic_out);
-
+	int teller = 0;
 	std::fstream bitstreamFile;
 	bitstreamFile.open("testout.hevc", std::fstream::binary | std::fstream::out);
 	if (!bitstreamFile)
@@ -268,8 +364,8 @@ void captureToYuv(){
 		Mat frame = readIn.clone();
 		cvtColor(readIn, frame, CV_BGR2YUV_I420);
 
-		namedWindow("MyVideo", WINDOW_AUTOSIZE);
-		imshow("MyVideo", readIn); //show the frame in "MyVideo" window
+		//namedWindow("MyVideo", WINDOW_AUTOSIZE);
+		cv::imshow("MyVideo", frame); //show the frame in "MyVideo" window
 
 		/*testFrame.data[frame_width*frame_height/2+frame_width/2] = 255;
 		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+1] = 255;;
@@ -278,23 +374,27 @@ void captureToYuv(){
 
 		//set depth and colorspace for x265
 		int depth = 8;
-		int colorSpace = X265_CSP_I420; 
+		int colorSpace = X265_CSP_I420;
 
 		/*imgStegaMat(&frame, "Dit is een test");*/
-		
+
 		/*std::ofstream testFile("output.yuv");
 		for (int i = 0; i < (frame.dataend - frame.datastart) / sizeof(uchar); i++){
-			testFile << frame.data[i];
-			frame.data[i] = 0;
+		testFile << frame.data[i];
+		frame.data[i] = 0;
 		}
 
 		testFile.flush();
 		testFile.close();
-		
+
+		*/
+		img_size = (frame.dataend - frame.datastart);
+		/*
+
 		Mat testFrame(160, 120, CV_16SC3);
 		std::ifstream inFile("output.yuv");
 		for (int i = 0; i < (testFrame.dataend - testFrame.datastart) / sizeof(uchar); i++){
-			inFile >> testFrame.data[i];
+		inFile >> testFrame.data[i];
 		}*/
 
 		//cout << "Decoded Text: " << imgDestegaMat(&frame) << endl;
@@ -312,29 +412,52 @@ void captureToYuv(){
 
 		//INSERT DIFFERENT ENCODER HERE IF NECESSARY
 		int encoded = x265_encoder_encode(encoder, &pp_nal, &pi_nal, pic_in, pic_recon);
-
+		
 		if (pi_nal){
 			for (uint32_t i = 0; i < pi_nal; i++)
 			{
 				//cout << pp_nal->payload << endl;
+//				std::cout << pp_nal->sizeBytes << endl;
 				bitstreamFile.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
 				//totalbytes += nal->sizeBytes;
+				std::fstream bitstreamFile2;
+				bitstreamFile2.open("nal"+std::to_string(teller) +".hevc", std::fstream::binary | std::fstream::out);
+				bitstreamFile2.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
+				bitstreamFile2.close();
+				
+				teller++;
+				//cout << "Test" << endl;
+
+				//receive chunks of data
+
+				rc = zmq_send(socket, &pp_nal->sizeBytes, 8, 0);
+				rc = zmq_send(socket, (const char*)pp_nal->payload, pp_nal->sizeBytes, 0);
+					
+				
+
+
 				pp_nal++;
+
+
 			}
 		}
 		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
 		{
-			cout << "esc key is pressed by user" << endl;
+			std::cout << "esc key is pressed by user" << endl;
 			vcap.~OpenCVWebcam();
 			break;
 		}
 	}
 
 	bitstreamFile.close();
+
+
+	zmq_close(socket);
+	zmq_ctx_destroy(context);
 }
 
 void check_error(int val) {
-	if (val<0){
+	if (val < 0){
 		fprintf(stderr, "Error load YUV file!\nPress ENTER to exit\n");
 		getchar();
 		exit(-1);
@@ -349,7 +472,7 @@ IplImage * cvLoadImageYUV(char * name_file, int w, int h){
 	FILE * pf = fopen(name_file, "rb");
 	if (pf == NULL){
 		fprintf(stderr, "Error open file %s\nPress ENTER to exit\n", name_file);
-			getchar();
+		getchar();
 		exit(-1);
 	}
 
@@ -371,7 +494,7 @@ IplImage * cvLoadImageYUV(char * name_file, int w, int h){
 	assert(image);
 
 	// Read Y
-	for (i = 0; i<w*h; i++){
+	for (i = 0; i < w*h; i++){
 		temp = fgetc(pf);
 		check_error(temp);
 
@@ -380,7 +503,7 @@ IplImage * cvLoadImageYUV(char * name_file, int w, int h){
 
 
 	// Read U
-	for (i = 0; i<w*h / 4; i++){
+	for (i = 0; i < w*h / 4; i++){
 		temp = fgetc(pf);
 		check_error(temp);
 
@@ -390,7 +513,7 @@ IplImage * cvLoadImageYUV(char * name_file, int w, int h){
 
 
 	// Read V
-	for (i = 0; i<w*h / 4; i++){
+	for (i = 0; i < w*h / 4; i++){
 		temp = fgetc(pf);
 		check_error(temp);
 
@@ -428,26 +551,26 @@ void decodeFromText(char* fileName){
 	char* decodedText = imgDestegaMat(&testFrame);
 
 	for (int i = 0; i < 10; i++){
-		cout << "Char: " << (unsigned int)decodedText[i] << endl;
+	cout << "Char: " << (unsigned int)decodedText[i] << endl;
 	}
 
 
 	cout << "Decoded Text: " << imgDestegaMat(&testFrame) << endl;
-*/
+	*/
 	Mat testFrame(160, 120, CV_16SC3);
 	std::ifstream inFile(fileName);
 	for (int i = 0; i < (testFrame.dataend - testFrame.datastart) / sizeof(uchar); i++){
 		inFile >> testFrame.data[i];
 	}
 
-	cout << "Decoded Text: " << imgDestegaMat(&testFrame) << endl;
+	std::cout << "Decoded Text: " << imgDestegaMat(&testFrame) << endl;
 
 	return;
 }
 
 void decodeFromFile(){
-	cout << "Input Text: Dit is een test:" << endl;;
-	
+	std::cout << "Input Text: Dit is een test:" << endl;;
+
 	decodeFromText("out.yuv");
 	getchar();
 	return;
@@ -465,12 +588,18 @@ int main(int argc, char** argv){
 	//t1.join();
 	//
 	//yuvDemoStegano();
-	captureToYuv();
+	
+	thread t2(serverYUV);
+	thread t1(captureToYuv);
+	t1.join();
+
+	
+	t2.join();
 	//decodeFromFile();
-	
-	
+
+
 	return 0;
-	
+
 	//
 	//
 	//getchar();
