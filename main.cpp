@@ -184,16 +184,16 @@ void server(){
 
 
 void captureToYuv(){
-	OpenCVWebcam vcap;
 
+	//Launch webcam and set resolution of 160x120 for faster encoding
+	OpenCVWebcam vcap;
 	vcap.setWidth(160);
 	vcap.setHeight(120);
-
-
 	int frame_width = vcap.getWidth();
 	int frame_height = vcap.getHeight();
 	int fps = vcap.getFPS();
 
+	//x265 encoder initialisation
 
 	/* x265_param_alloc:
 	*  Allocates an x265_param instance. The returned param structure is not
@@ -202,7 +202,7 @@ void captureToYuv(){
 	*  x265_param as an opaque data struct for version safety */
 	x265_param *param = x265_param_alloc();
 
-	/*      returns 0 on success, negative on failure (e.g. invalid preset/tune name). */
+	/* returns 0 on success, negative on failure (e.g. invalid preset/tune name). */
 	x265_param_default_preset(param, "ultrafast", "zerolatency");
 
 	/* x265_param_parse:
@@ -261,32 +261,26 @@ void captureToYuv(){
 	}
 
 	while (1){
-
 		Mat readIn;
-
 		readIn = vcap.capture(); // read a new frame from video
 
+		//convert frame to YUV
 		Mat frame = readIn.clone();
 		cvtColor(readIn, frame, CV_BGR2YUV_I420);
 
 		namedWindow("MyVideo", WINDOW_AUTOSIZE);
 		imshow("MyVideo", readIn); //show the frame in "MyVideo" window
 
-		
-		
 		/*testFrame.data[frame_width*frame_height/2+frame_width/2] = 255;
 		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+1] = 255;;
 		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+2] = 255;;
 		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+3] = 255;;*/
+
+		//set depth and colorspace for x265
 		int depth = 8;
-		int colorSpace = X265_CSP_I420; // wat is dit? Welke waarden mogen we hier meegeven?
+		int colorSpace = X265_CSP_I420; 
 
-		
-		
-
-		/*imgStegaMat(&frame, "Dit is een test");
-*/
-		
+		/*imgStegaMat(&frame, "Dit is een test");*/
 		
 		/*std::ofstream testFile("output.yuv");
 		for (int i = 0; i < (frame.dataend - frame.datastart) / sizeof(uchar); i++){
@@ -305,7 +299,7 @@ void captureToYuv(){
 
 		//cout << "Decoded Text: " << imgDestegaMat(&frame) << endl;
 
-
+		//encode frame with x265
 		uint32_t pixelbytes = depth > 8 ? 2 : 1;
 		pic_orig.colorSpace = colorSpace;
 		pic_orig.bitDepth = depth;
@@ -316,6 +310,7 @@ void captureToYuv(){
 		pic_orig.planes[1] = (char*)pic_orig.planes[0] + (pic_orig.stride[0] * frame_height);
 		pic_orig.planes[2] = (char*)pic_orig.planes[1] + (pic_orig.stride[1] * (frame_height >> x265_cli_csps[colorSpace].height[1]));
 
+		//INSERT DIFFERENT ENCODER HERE IF NECESSARY
 		int encoded = x265_encoder_encode(encoder, &pp_nal, &pi_nal, pic_in, pic_recon);
 
 		if (pi_nal){
@@ -332,9 +327,7 @@ void captureToYuv(){
 			cout << "esc key is pressed by user" << endl;
 			vcap.~OpenCVWebcam();
 			break;
-
 		}
-
 	}
 
 	bitstreamFile.close();
@@ -348,9 +341,7 @@ void check_error(int val) {
 	}
 }
 
-
 IplImage * cvLoadImageYUV(char * name_file, int w, int h){
-
 
 	IplImage *py, *pu, *pv, *pu_big, *pv_big, *image;
 	int i, temp;
@@ -429,8 +420,6 @@ IplImage * cvLoadImageYUV(char * name_file, int w, int h){
 	return image;
 
 }
-
-
 
 void decodeFromText(char* fileName){
 
