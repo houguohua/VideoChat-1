@@ -357,8 +357,14 @@ void captureToYuv(){
 		readIn = vcap.capture(); // read a new frame from video
 
 		//convert frame to YUV
-		Mat frame = readIn.clone();
-		cvtColor(readIn, frame, CV_BGR2YUV_I420);
+		//Mat frame = readIn.clone();
+		
+		Mat frame(160, 120, CV_8UC3);
+
+		resize(readIn, frame, Size(160, 120), 0, 0, INTER_NEAREST);
+		
+		
+		cvtColor(frame, frame, CV_BGR2YUV_I420);
 
 		//namedWindow("MyVideo", WINDOW_AUTOSIZE);
 		cv::imshow("MyVideo", frame); //show the frame in "MyVideo" window
