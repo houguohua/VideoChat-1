@@ -38,7 +38,6 @@ int OpenCVWebcam::getFPS(){
 	return stream1->get(CV_CAP_PROP_FPS);
 }
 
-<<<<<<< HEAD
 OpenCVWebcam::~OpenCVWebcam(){
 	stream1->release();
 }
@@ -48,14 +47,4 @@ Mat OpenCVWebcam::capture(){
 	stream1->read(frame);
 	return frame;
 }
-=======
-	OpenCVWebcam::~OpenCVWebcam(){
-		stream1->release();
-	}
 
-	Mat OpenCVWebcam::capture(){
-		Mat frame;
-		stream1->read(frame);
-		return frame;
-	}
->>>>>>> 0cc854a60870e3514b34f17003c04af2123e2dd7
