@@ -294,7 +294,7 @@ void captureToYuv(){
 	/*
 	* Here we init the x265_decoder with all the neccesary parameters.
 	*/
-	initDecoder(frame_width, frame_height);
+//	initDecoder(frame_width, frame_height);
 
 
 
@@ -316,7 +316,8 @@ void captureToYuv(){
 
 		Mat frame(160, 120, CV_8UC3);
 
-		resize(readIn, frame, Size(160, 120), 0, 0, INTER_NEAREST);
+		
+		resize(readIn, frame, Size(160, 120), 0, 0, INTER_LINEAR);
 
 
 		cvtColor(frame, frame, CV_BGR2YUV_I420);
