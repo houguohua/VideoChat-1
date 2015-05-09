@@ -25,14 +25,14 @@ using namespace cv;
 using namespace std;
 int img_size = 57600;
 #define BUFLEN 1024
+bool written = false;
+char* text = "";
 
 void client(){
 	//initialize the socket
 	int rc = 0;
 	void *context = zmq_ctx_new();
 	void *socket = zmq_socket(context, ZMQ_PAIR);
-
-	//CameraReader camera = new CameraReader();
 
 	std::cout << "Enter ip of server" << endl;
 	string ipaddress;
@@ -183,6 +183,22 @@ void client(){
 //}
 //
 
+void askText(){
+	string inputText;
+	cout << "inputtext" << endl;
+	getline(cin, inputText);
+	cout << endl;
+	while (inputText != "stop"){
+		cout << "inputtext" << endl;
+		text = new char[inputText.length()];
+		std::strcpy(text, inputText.c_str());
+		written = true;
+		getline(cin, inputText);
+
+	}
+}
+
+
 void serverYUV(){
 
 	//init socket
@@ -247,10 +263,6 @@ void serverYUV(){
 		//cvShowImage("Received", frame);
 		//waitKey(0);
 		//if(waitKey(0) >= 0) break;
-
-
-
-
 	}
 	bitstreamFile.close();
 	zmq_close(socket);
@@ -307,9 +319,14 @@ void captureToYuv(){
 		return;
 	}
 
+
+	thread t3(askText);
+//	t3.join();
+
 	while (1){
 		Mat readIn;
 		readIn = vcap.capture(); // read a new frame from video
+
 
 		//convert frame to YUV
 		//Mat frame = readIn.clone();
@@ -322,6 +339,12 @@ void captureToYuv(){
 
 		cvtColor(frame, frame, CV_BGR2YUV_I420);
 
+		if (written){
+			cout << "Inserting in image: " << text << endl;
+			imgStegaMat(&frame, text);
+			written = false;
+			cout << "Decoded text: " << imgDestegaMat(&frame) << endl;
+		}
 		//namedWindow("MyVideo", WINDOW_AUTOSIZE);
 		cv::imshow("MyVideo", frame); //show the frame in "MyVideo" window
 
@@ -485,6 +508,7 @@ IplImage * cvLoadImageYUV(char * name_file, int w, int h){
 
 }
 
+
 void decodeFromText(char* fileName){
 
 	/*Mat testFrame(cvLoadImageYUV(fileName, 160, 120));
@@ -528,9 +552,8 @@ int main(int argc, char** argv){
 
 	thread t2(serverYUV);
 	thread t1(captureToYuv);
+	
 	t1.join();
-
-
 	t2.join();
 	//decodeFromFile();
 
