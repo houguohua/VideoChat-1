@@ -1,12 +1,7 @@
-#include <WinSock2.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
 #include <iostream>
 #include <opencv\cv.h>
 //#include <opencv\highgui.h>
 #include <zmq.h>
-#include <WinSock2.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,18 +13,7 @@
 #include "yuv.h"
 #include "param.h"
 #include "x265Encoder.h"
-extern "C"
-{
-	#include <libavutil/opt.h>
-	#include <libavcodec/avcodec.h>
-	#include <libavutil/channel_layout.h>
-	#include <libavutil/common.h>
-	#include <libavutil/imgutils.h>
-	#include <libavutil/mathematics.h>
-	#include <libavutil/samplefmt.h>
-}
-
-#pragma comment(lib, "avcodec.lib")
+#include "x265Decoder.h"
 
 using namespace cv;
 using namespace std;
@@ -131,13 +115,13 @@ void server(){
 		return;
 	}
 
-	
+
 
 	while (1){
 		//cout << "Test" << endl;
 
 		//receive chunks of data
-		
+
 		for (int i = 0; i < img_size / BUFLEN + 1; i++){
 			if (i == 0){
 				rc = zmq_recv(socket, buf, BUFLEN, 0);
@@ -161,7 +145,7 @@ void server(){
 			else{
 				memcpy(img + ((i)*BUFLEN), buf, img_size%BUFLEN);
 			}
-			
+
 		}
 
 
@@ -196,112 +180,11 @@ void server(){
 
 
 
-static AVFrame * icv_alloc_picture_FFMPEG(int pix_fmt, int width, int height, bool alloc)
-{
-	AVFrame * picture;
-	uint8_t * picture_buf;
-	int size;
-
-	picture = av_frame_alloc();
-	if (!picture)
-		return NULL;
-	size = avpicture_get_size((PixelFormat)pix_fmt, width, height);
-	if (alloc)
-	{
-		picture_buf = (uint8_t *)malloc(size);
-		if (!picture_buf)
-		{
-			avcodec_free_frame(&picture);
-			std::cout << "picture buff = NULL" << std::endl;
-			return NULL;
-		}
-		avpicture_fill((AVPicture *)picture, picture_buf, (PixelFormat)pix_fmt, width, height);
-	}
-	return picture;
-}
-
-
-
-void video_decode(x265_nal *pp_nal, uint32_t pi_nal) {
-	AVCodec *codec;
-	AVCodecContext *av_codec_context = NULL;
-	avcodec_register_all();
-
-	int frame_count;
-	FILE *f;
-	AVFrame *frame;
-	AVPacket avpkt;
-	av_init_packet(&avpkt);
-
-	codec = avcodec_find_decoder(AV_CODEC_ID_H265);
-	if (!codec) {
-		fprintf(stderr, "Codec not found\n");
-		exit(1);
-	}
-
-	av_codec_context = avcodec_alloc_context3(codec);
-	if (!av_codec_context) {
-		fprintf(stderr, "Could not allocate video codec context\n");
-		exit(1);
-	}
-	av_codec_context->width = 160;
-	av_codec_context->height = 120;
-	av_codec_context->extradata = NULL;
-	av_codec_context->pix_fmt = PIX_FMT_YUV420P;
-	if (codec->capabilities & CODEC_CAP_TRUNCATED)
-		av_codec_context->flags |= CODEC_FLAG_TRUNCATED; /* We may send incomplete frames */
-	if (codec->capabilities & CODEC_FLAG2_CHUNKS)
-		av_codec_context->flags |= CODEC_FLAG2_CHUNKS;
-
-	/* open it */
-	if (avcodec_open2(av_codec_context, codec, NULL) < 0) {
-		fprintf(stderr, "Could not open codec\n");
-		exit(1);
-	}
-	
-
-	AVFrame *av_frame_ = icv_alloc_picture_FFMPEG(PIX_FMT_YUV420P, 160, 120, true);
-	AVFrame *av_frame_RGB_ = icv_alloc_picture_FFMPEG(PIX_FMT_RGB24, 160, 120, true);
-
-
-	char *rgb_buffer = new char[120*160*3];
-
-	frame_count = 0;
-	int got_frame;
-
-	AVPacket av_packet;
-	av_new_packet(&av_packet, pp_nal->sizeBytes);
-	av_packet.data = (uint8_t *) pp_nal->payload;
-	av_packet.size = pp_nal->sizeBytes;
-	
-	avcodec_decode_video2(av_codec_context, av_frame_, &got_frame, &av_packet);
-	
-	/* some codecs, such as MPEG, transmit the I and P frame with a
-	latency of one frame. You must do the following to have a
-	chance to get the last frame of the video */
-	avpkt.data = NULL;
-	avpkt.size = 0;
-	avcodec_close(av_codec_context);
-	av_free(av_codec_context);
-	//av_frame_free(&frame);
-}
-
-
-
-
-
 void captureToYuv(){
-	/* must be called before using avcodec lib */
-	//avcodec_init();
-	/* register all the codecs */
-	avcodec_register_all();
-	AVCodec *codec;
-	codec = avcodec_find_decoder(AV_CODEC_ID_H265);
-
 
 	VideoCapture vcap(0);
 	//vcap.set(CV_CAP_PROP_CONVERT_RGB, false);
-	
+
 	//vcap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('I', 'M', 'C', '3'));
 	vcap.set(CV_CAP_PROP_FRAME_HEIGHT, 120);
 	vcap.set(CV_CAP_PROP_FRAME_WIDTH, 160);
@@ -322,6 +205,10 @@ void captureToYuv(){
 	x265_nal *pp_nal;
 	uint32_t pi_nal;
 
+	/*
+	* Here we init the x265_decoder with all the neccesary parameters.
+	*/
+	initDecoder(frame_width, frame_height);
 
 
 	std::fstream bitstreamFile;
@@ -348,12 +235,12 @@ void captureToYuv(){
 		}
 
 		imshow("MyVideo", frame); //show the frame in "MyVideo" window
-		
+
 
 		imgStegaMat(&frame, "Dit is een test");
 
 		cout << "Decoded Text: " << imgDestegaMat(&frame) << endl;
-		
+
 		std::ofstream testFile("output.yuv");
 		for (int i = 0; i < (frame.dataend - frame.datastart) / sizeof(uchar); i++){
 			testFile << frame.data[i];
@@ -370,7 +257,7 @@ void captureToYuv(){
 			{
 				//cout << pp_nal->payload << endl;
 				bitstreamFile.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
-				video_decode(pp_nal, pi_nal);
+				decodeFrame(pp_nal, pi_nal);
 				//totalbytes += nal->sizeBytes;
 				pp_nal++;
 			}
@@ -384,7 +271,7 @@ void captureToYuv(){
 
 	}
 
-	//bitstreamFile.close();
+	bitstreamFile.close();
 }
 
 void check_error(int val) {
@@ -405,7 +292,7 @@ IplImage * cvLoadImageYUV(char * name_file, int w, int h){
 	FILE * pf = fopen(name_file, "rb");
 	if (pf == NULL){
 		fprintf(stderr, "Error open file %s\nPress ENTER to exit\n", name_file);
-			getchar();
+		getchar();
 		exit(-1);
 	}
 
@@ -517,8 +404,8 @@ int main(int argc, char** argv){
 	//
 	captureToYuv();
 	//decodeFromFile();
-	
-	
+
+
 	return 0;
 	//Mat matimg = imread("C:/Users/kiani/Downloads/fruit.jpg");
 	//string input;
