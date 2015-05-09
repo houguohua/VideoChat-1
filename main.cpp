@@ -317,7 +317,7 @@ void captureToYuv(){
 		Mat frame(160, 120, CV_8UC3);
 
 		
-		resize(readIn, frame, Size(160, 120), 0, 0, INTER_LINEAR);
+		resize(readIn, frame, Size(160, 120), 0, 0, INTER_CUBIC);
 
 
 		cvtColor(frame, frame, CV_BGR2YUV_I420);
