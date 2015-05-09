@@ -18,7 +18,8 @@
 #include "encoder.h"
 #include "yuv.h"
 #include "param.h"
-
+#include "x265Encoder.h"
+#include "x265Decoder.h"
 
 using namespace cv;
 using namespace std;
@@ -283,65 +284,20 @@ void captureToYuv(){
 	std::cout << "RC: " + rc << endl;
 
 
-
-	//x265 encoder initialisation
-
-	/* x265_param_alloc:
-	*  Allocates an x265_param instance. The returned param structure is not
-	*  special in any way, but using this method together with x265_param_free()
-	*  and x265_param_parse() to set values by name allows the application to treat
-	*  x265_param as an opaque data struct for version safety */
-	x265_param *param = x265_param_alloc();
-
-	/* returns 0 on success, negative on failure (e.g. invalid preset/tune name). */
-	x265_param_default_preset(param, "ultrafast", "zerolatency");
-
-	/* x265_param_parse:
-	*  set one parameter by name.
-	*  returns 0 on success, or returns one of the following errors.
-	*  note: BAD_VALUE occurs only if it can't even parse the value,
-	*  numerical range is not checked until x265_encoder_open().
-	*  value=NULL means "true" for boolean options, but is a BAD_VALUE for non-booleans. */
-#define X265_PARAM_BAD_NAME  (-1)
-#define X265_PARAM_BAD_VALUE (-2)
-	x265_param_parse(param, "fps", "30");
-	x265_param_parse(param, "input-res", "160x120"); //wxh
-	//x265_param_parse(param, "bframes", "3");
-	x265_param_parse(param, "rc-lookahead", "5");
-	x265_param_parse(param, "repeat-headers", "1");
-	x265_param_parse(param, "-I", "1");
-	x265_param_parse(param, "-i", "1");
-
-	x265_param_parse(param, "qp", "0");
-	/* x265_picture_alloc:
-	*  Allocates an x265_picture instance. The returned picture structure is not
-	*  special in any way, but using this method together with x265_picture_free()
-	*  and x265_picture_init() allows some version safety. New picture fields will
-	*  always be added to the end of x265_picture */
-	x265_picture pic_orig, pic_out;
-	x265_picture *pic_in = &pic_orig;
-	x265_picture *pic_recon = &pic_out;
-
-
-
-	/***
-	* Initialize an x265_picture structure to default values. It sets the pixel
-	* depth and color space to the encoder's internal values and sets the slice
-	* type to auto - so the lookahead will determine slice type.
+	/*
+	* Here we init the x265_encoder with all the neccesary parameters.
 	*/
-	x265_picture_init(param, pic_in);
-
-
-
-	/* x265_encoder_encode:
-	*      encode one picture.
-	*      *pi_nal is the number of NAL units outputted in pp_nal.
-	*      returns negative on error, zero if no NAL units returned.
-	*      the payloads of all output NALs are guaranteed to be sequential in memory. */
+	initEncoder(frame_width, frame_height);
 	x265_nal *pp_nal;
 	uint32_t pi_nal;
-	x265_encoder *encoder = x265_encoder_open(param);
-	//x265_encoder_encode(encoder, &pp_nal, &pi_nal, pic_in, pic_out);
+
+	/*
+	* Here we init the x265_decoder with all the neccesary parameters.
+	*/
+	initDecoder(frame_width, frame_height);
+
+
+
 	int teller = 0;
 	std::fstream bitstreamFile;
 	bitstreamFile.open("testout.hevc", std::fstream::binary | std::fstream::out);
@@ -368,15 +324,10 @@ void captureToYuv(){
 		//namedWindow("MyVideo", WINDOW_AUTOSIZE);
 		cv::imshow("MyVideo", frame); //show the frame in "MyVideo" window
 
-
 		/*testFrame.data[frame_width*frame_height/2+frame_width/2] = 255;
 		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+1] = 255;;
 		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+2] = 255;;
 		testFrame.data[frame_width*frame_height / 2 + frame_width / 2+3] = 255;;*/
-
-		//set depth and colorspace for x265
-		int depth = 8;
-		int colorSpace = X265_CSP_I420;
 
 		/*imgStegaMat(&frame, "Dit is een test");*/
 
@@ -398,19 +349,11 @@ void captureToYuv(){
 
 		//cout << "Decoded Text: " << imgDestegaMat(&frame) << endl;
 
-		//encode frame with x265
-		uint32_t pixelbytes = depth > 8 ? 2 : 1;
-		pic_orig.colorSpace = colorSpace;
-		pic_orig.bitDepth = depth;
-		pic_orig.stride[0] = frame_width * pixelbytes;
-		pic_orig.stride[1] = pic_orig.stride[0] >> x265_cli_csps[colorSpace].width[1];
-		pic_orig.stride[2] = pic_orig.stride[0] >> x265_cli_csps[colorSpace].width[2];
-		pic_orig.planes[0] = frame.data;
-		pic_orig.planes[1] = (char*)pic_orig.planes[0] + (pic_orig.stride[0] * frame_height);
-		pic_orig.planes[2] = (char*)pic_orig.planes[1] + (pic_orig.stride[1] * (frame_height >> x265_cli_csps[colorSpace].height[1]));
+		//Encode a frame using the x265_encoder
+		encodeFrame(&frame);
 
-		//INSERT DIFFERENT ENCODER HERE IF NECESSARY
-		int encoded = x265_encoder_encode(encoder, &pp_nal, &pi_nal, pic_in, pic_recon);
+		pp_nal = get_ppnal();
+		pi_nal = get_pinal();
 
 		if (pi_nal){
 			for (uint32_t i = 0; i < pi_nal; i++)
@@ -419,6 +362,9 @@ void captureToYuv(){
 				//				std::cout << pp_nal->sizeBytes << endl;
 				bitstreamFile.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
 				//totalbytes += nal->sizeBytes;
+
+				//Decode a frame using the x265_encoder
+				//decodeFrame(pp_nal, pi_nal);
 
 				//cout << "Test" << endl;
 
