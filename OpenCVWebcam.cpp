@@ -19,31 +19,31 @@
 #include "param.h"
 
 OpenCVWebcam::OpenCVWebcam()
-	{
-		stream1 = new VideoCapture(0);
-		stream1->set(CV_CAP_PROP_CONVERT_RGB, false);
-	}
+{
+	stream1 = new VideoCapture(0);
+	stream1->set(CV_CAP_PROP_CONVERT_RGB, false);
+}
 
-	void OpenCVWebcam::setWidth(int w){
-		width = w;
-		stream1->set(CV_CAP_PROP_FRAME_WIDTH, w);
-	}
+void OpenCVWebcam::setWidth(int w){
+	width = w;
+	stream1->set(CV_CAP_PROP_FRAME_WIDTH, w);
+}
 
-	void OpenCVWebcam::setHeight(int h){
-		height = h;
-		stream1->set(CV_CAP_PROP_FRAME_HEIGHT, h);
-	}
+void OpenCVWebcam::setHeight(int h){
+	height = h;
+	stream1->set(CV_CAP_PROP_FRAME_HEIGHT, h);
+}
 
-	int OpenCVWebcam::getFPS(){
-		return stream1->get(CV_CAP_PROP_FPS);
-	}
+int OpenCVWebcam::getFPS(){
+	return stream1->get(CV_CAP_PROP_FPS);
+}
 
-	OpenCVWebcam::~OpenCVWebcam(){
+OpenCVWebcam::~OpenCVWebcam(){
+	stream1->release();
+}
 
-	}
-
-	Mat OpenCVWebcam::capture(){
-		Mat frame;
-		stream1->read(frame);
-		return frame;
-	}
+Mat OpenCVWebcam::capture(){
+	Mat frame;
+	stream1->read(frame);
+	return frame;
+}

@@ -26,17 +26,17 @@ using namespace cv;
 //Base class
 
 void Webcam::setWidth(int w){
-		width = w;
-	}
+	width = w;
+}
 
 void Webcam::setHeight(int h){
-		height = h;
-	}
+	height = h;
+}
 
 int Webcam::getWidth(){
-		return width;
-	}
+	return width;
+}
 
 int Webcam::getHeight(){
-		return height;
-	}
+	return height;
+}
