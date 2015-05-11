@@ -8,11 +8,12 @@
 #include "yuv.h"
 #include "param.h"
 
+
 using namespace std;
 using namespace cv;
 
 void initDecoder(int width, int height);
 void freeDecoder();
-void decodeFrame(x265_nal *pp_nal, uint32_t pi_nal);
+void decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, bool *frameDecoded);
 
 #endif // ifndef X265DECODER_H

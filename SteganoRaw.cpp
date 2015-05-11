@@ -3,7 +3,7 @@
 #include <bitset>
 #include <iostream>
 #include "SteganoRaw.h"
-#define BIT_TO_CHANGE 7
+#define BIT_TO_CHANGE 0
 
 using namespace std;
 
@@ -126,6 +126,9 @@ char* imgDestegaMat(cv::Mat *img) {
 					return res;
 				}
 				else{
+					if (!firstDel ){
+						return "";
+					}
 					length++;
 					res = (char*)realloc(res, sizeof(char)*length);
 					res[length - 1] = (char)ToByte(tmp);

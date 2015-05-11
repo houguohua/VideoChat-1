@@ -111,7 +111,7 @@ cv::Mat avframe_to_cvmat(AVFrame *frame)
 	return m;
 }
 
-void decodeFrame(x265_nal *pp_nal, uint32_t pi_nal){
+void decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, bool* frameDecoded){
 
 	AVPacket av_packet;
 	got_frame = 0;
@@ -126,7 +126,11 @@ void decodeFrame(x265_nal *pp_nal, uint32_t pi_nal){
 
 
 	if (got_frame){
-		imshow("DecodeVideo", avframe_to_cvmat(av_frame));
+		*decodedFrame = avframe_to_cvmat(av_frame);
+		*frameDecoded = true;
+	}
+	else{
+		*frameDecoded = false;
 	}
 
 	/*Mat m;
