@@ -28,7 +28,6 @@ AVFrame *av_frame;
 AVPacket avpkt;
 int frame_count;
 int got_frame;
-int teller;
 
 void initDecoder(int width, int height){
 	AVCodec *codec;
@@ -123,12 +122,8 @@ void decodeFrame(x265_nal *pp_nal, uint32_t pi_nal){
 	av_packet.size = pp_nal->sizeBytes;
 
 	avcodec_decode_video2(av_codec_context, av_frame, &got_frame, &av_packet);
-	teller++;
-	if (got_frame){
-		cout << "aantal frames: " << teller << endl;
-		cout << "frame gekregen" << endl;
-		teller = 0;
-	}
+
+
 
 	if (got_frame){
 		imshow("DecodeVideo", avframe_to_cvmat(av_frame));
