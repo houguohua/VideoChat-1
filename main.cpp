@@ -364,7 +364,7 @@ void captureToYuv(){
 				//totalbytes += nal->sizeBytes;
 
 				//Decode a frame using the x265_encoder
-				//decodeFrame(pp_nal, pi_nal);
+				decodeFrame(pp_nal, pi_nal);
 
 				//cout << "Test" << endl;
 

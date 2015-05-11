@@ -28,6 +28,7 @@ AVFrame *av_frame;
 AVPacket avpkt;
 int frame_count;
 int got_frame;
+int teller;
 
 void initDecoder(int width, int height){
 	AVCodec *codec;
@@ -87,10 +88,34 @@ void freeDecoder(){
 	//av_frame_free(&frame);
 }
 
+cv::Mat avframe_to_cvmat(AVFrame *frame)
+{
+	AVFrame dst;
+	cv::Mat m;
+
+	memset(&dst, 0, sizeof(dst));
+
+	int w = frame->width, h = frame->height;
+	m = cv::Mat(h, w, CV_8UC3);
+	dst.data[0] = (uint8_t *)m.data;
+	avpicture_fill((AVPicture *)&dst, dst.data[0], PIX_FMT_BGR24, w, h);
+
+	struct SwsContext *convert_ctx = NULL;
+	enum PixelFormat src_pixfmt = (enum PixelFormat)frame->format;
+	enum PixelFormat dst_pixfmt = PIX_FMT_BGR24;
+	convert_ctx = sws_getContext(w, h, src_pixfmt, w, h, dst_pixfmt,
+		SWS_FAST_BILINEAR, NULL, NULL, NULL);
+	sws_scale(convert_ctx, frame->data, frame->linesize, 0, h,
+		dst.data, dst.linesize);
+	sws_freeContext(convert_ctx);
+
+	return m;
+}
+
 void decodeFrame(x265_nal *pp_nal, uint32_t pi_nal){
 
 	AVPacket av_packet;
-
+	got_frame = 0;
 	AVCodecParserContext *avparser = av_parser_init(AV_CODEC_ID_HEVC);
 	av_init_packet(&av_packet);
 	av_new_packet(&av_packet, pp_nal->sizeBytes);
@@ -98,6 +123,16 @@ void decodeFrame(x265_nal *pp_nal, uint32_t pi_nal){
 	av_packet.size = pp_nal->sizeBytes;
 
 	avcodec_decode_video2(av_codec_context, av_frame, &got_frame, &av_packet);
+	teller++;
+	if (got_frame){
+		cout << "aantal frames: " << teller << endl;
+		cout << "frame gekregen" << endl;
+		teller = 0;
+	}
+
+	if (got_frame){
+		imshow("DecodeVideo", avframe_to_cvmat(av_frame));
+	}
 
 	/*Mat m;
 	AVFrame dst;
@@ -121,6 +156,7 @@ void decodeFrame(x265_nal *pp_nal, uint32_t pi_nal){
 	imshow("MyVideo", m);
 	waitKey(30);*/
 }
+
 
 static AVFrame * icv_alloc_picture_FFMPEG(int pix_fmt, int width, int height, bool alloc)
 {
