@@ -299,7 +299,8 @@ void captureToYuv(){
 	/*
 	* Here we init the x265_encoder with all the neccesary parameters.
 	*/
-	initEncoder(frame_width, frame_height);
+	x265Encoder encoder;
+	encoder.initEncoder(frame_width, frame_height);
 	x265_nal *pp_nal;
 	uint32_t pi_nal;
 
@@ -373,10 +374,10 @@ void captureToYuv(){
 		//cout << "Decoded Text: " << imgDestegaMat(&frame) << endl;
 
 		//Encode a frame using the x265_encoder
-		encodeFrame(&frame);
+		encoder.encodeFrame(&frame);
 
-		pp_nal = get_ppnal();
-		pi_nal = get_pinal();
+		pp_nal = encoder.get_ppnal();
+		pi_nal = encoder.get_pinal();
 
 		if (pi_nal){
 			for (uint32_t i = 0; i < pi_nal; i++)
