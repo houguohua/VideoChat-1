@@ -48,6 +48,7 @@ void initEncoder(int width, int height){
 	x265_param_parse(param, "bframes", "3");
 	x265_param_parse(param, "rc-lookahead", "5");
 	x265_param_parse(param, "repeat-headers", "1");
+	x265_param_parse(param, "pools", "none");
 
 	/* x265_picture_alloc:
 	*  Allocates an x265_picture instance. The returned picture structure is not
