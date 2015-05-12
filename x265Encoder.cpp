@@ -9,7 +9,7 @@ x265Encoder::x265Encoder(){
 	*  x265_param as an opaque data struct for version safety */
 	x265_param *param = x265_param_alloc();
 
-	/*      returns 0 on success, negative on failure (e.g. invalid preset/tune name). */
+	/* returns 0 on success, negative on failure (e.g. invalid preset/tune name). */
 	x265_param_default_preset(param, "ultrafast", "zerolatency");
 
 	/* x265_param_parse:
@@ -65,7 +65,6 @@ void x265Encoder::initEncoder(int width, int height){
 	frame_height = height;
 	depth = 8;
 	colorSpace = X265_CSP_I420;
-
 }
 
 void x265Encoder::encodeFrame(cv::Mat* frame){
