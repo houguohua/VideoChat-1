@@ -168,6 +168,8 @@ void captureToYuv(){
 	rc = zmq_connect(socket, ("tcp://" + ipaddress + ":9000").c_str()); /*127.0.0.1*/
 	std::cout << "RC: " + rc << endl;
 
+	thread t2(serverYUV);
+	t2.join();
 
 	/*
 	* Here we init the x265_encoder with all the neccesary parameters.
@@ -312,11 +314,11 @@ int main(int argc, char** argv){
 	//
 	//yuvDemoStegano();
 
-	thread t2(serverYUV);
+	
 	thread t1(captureToYuv);
 	
 	t1.join();
-	t2.join();
+	
 	//decodeFromFile();
 
 
