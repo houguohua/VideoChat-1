@@ -29,6 +29,8 @@ int img_size = 57600;
 bool written = false;
 char* text = "";
 
+bool encode = false;
+
 
 
 void askText(){
@@ -51,7 +53,7 @@ void serverYUV(){
 	//init socket
 	int rc = 0;
 	
-	int recv_size;
+	uint32_t recv_size;
 	uint8_t * img = (uint8_t*)malloc(img_size*sizeof(byte));
 	char buf[BUFLEN];
 
@@ -84,27 +86,36 @@ void serverYUV(){
 	
 
 
-	int teller = 0;
+	
 	while (1){
 		//cout << "Test" << endl;
 
 		//receive chunks of data
 
-		rc = zmq_recv(socket, &recv_size, 8, 0);
-	
+		if (encode){
+			rc = zmq_recv(socket, &recv_size, 4, 0);
 
-		img = (uchar*)realloc(img, recv_size*sizeof(uchar));
+			img = (uchar*)realloc(img, recv_size*sizeof(uchar));
 
-		rc = zmq_recv(socket, img, recv_size, 0);
+			rc = zmq_recv(socket, img, recv_size, 0);
 
-		x265_nal *pp_nal = new x265_nal(); /*(x265_nal*)malloc(sizeof(pp_nal));*/
-		pp_nal->sizeBytes = (int)recv_size;
-		pp_nal->payload = img;
+		}
+		else{
+			rc = zmq_recv(socket, img, img_size, 0);
+		}
+		
+		
 
 		Mat* decodedFrame = new Mat(120, 160, CV_8UC3);
 		bool decoded = false;
 
-		decodeFrame(pp_nal, decodedFrame, &decoded);
+		if (encode){
+			x265_nal *pp_nal = new x265_nal(); /*(x265_nal*)malloc(sizeof(pp_nal));*/
+			pp_nal->sizeBytes = (int)recv_size;
+			pp_nal->payload = img;
+			decodeFrame(pp_nal, decodedFrame, &decoded);
+		}
+		
 
 		
 
@@ -118,8 +129,10 @@ void serverYUV(){
 			}
 			
 			imshow("DecodeVideo", *decodedFrame);
-			if (waitKey(1) > 0)
+			if (waitKey(1) > 0){
 				break;
+			}
+
 		}
 		
 
@@ -141,6 +154,7 @@ void serverYUV(){
 	free(img);*/
 	zmq_close(socket);
 	zmq_ctx_destroy(context);
+	exit(0);
 }
 
 
@@ -181,7 +195,7 @@ void captureToYuv(){
 
 
 
-	int teller = 0;
+	
 	std::fstream bitstreamFile;
 	bitstreamFile.open("testout.hevc", std::fstream::binary | std::fstream::out);
 	if (!bitstreamFile)
@@ -207,6 +221,8 @@ void captureToYuv(){
 
 		resize(readIn, frame, Size(160, 120), 0, 0, INTER_CUBIC);
 
+		cvtColor(frame, frame, CV_BGR2YUV_I420);
+
 		if (written){
 			HANDLE hConsole;
 			hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -214,40 +230,45 @@ void captureToYuv(){
 			cout << "Me: " << text << endl;
 			imgStegaMat(&frame, text);
 			written = false;
-		}
+		}/*
 		else{
 			imgStegaMat(&frame, "   ");
-		}
+		}*/
 
 		
-		cvtColor(frame, frame, CV_BGR2YUV_I420);
+		
 		
 		img_size = (frame.dataend - frame.datastart);
 		
 
 		//Encode a frame using the x265_encoder
-		encodeFrame(&frame);
+		if (encode){
+			encodeFrame(&frame);
 
-		pp_nal = get_ppnal();
-		pi_nal = get_pinal();
+			pp_nal = get_ppnal();
+			pi_nal = get_pinal();
 
-		if (pi_nal){
-			for (uint32_t i = 0; i < pi_nal; i++)
-			{
-				//bitstreamFile.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
-				//receive chunks of data
-
-				
-				rc = zmq_send(socket, &pp_nal->sizeBytes, 8, 0);
-				rc = zmq_send(socket, (const char*)pp_nal->payload, pp_nal->sizeBytes, 0);
+			if (pi_nal){
+				for (uint32_t i = 0; i < pi_nal; i++)
+				{
+					//bitstreamFile.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
+					//receive chunks of data
 
 
+					rc = zmq_send(socket, &pp_nal->sizeBytes, 4, 0);
+					rc = zmq_send(socket, (const char*)pp_nal->payload, pp_nal->sizeBytes, 0);
 
 
-				pp_nal++;
 
 
+					pp_nal++;
+
+
+				}
 			}
+		}
+		else{
+			rc = zmq_send(socket, (const char*)frame.data, img_size , 0);
 		}
 		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
 		{
@@ -262,6 +283,7 @@ void captureToYuv(){
 
 	zmq_close(socket);
 	zmq_ctx_destroy(context);
+	exit(0);
 }
 
 void check_error(int val) {
