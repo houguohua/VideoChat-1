@@ -50,7 +50,8 @@ void serverYUV(){
 
 	//init socket
 	int rc = 0;
-	uchar* recv_size = (uchar*)malloc(8 * sizeof(byte));
+	
+	int recv_size;
 	uint8_t * img = (uint8_t*)malloc(img_size*sizeof(byte));
 	char buf[BUFLEN];
 
@@ -89,12 +90,12 @@ void serverYUV(){
 
 		//receive chunks of data
 
-		rc = zmq_recv(socket, buf, 8, 0);
-		memcpy(&recv_size, buf, 8);
+		rc = zmq_recv(socket, &recv_size, 8, 0);
+	
 
-		img = (uchar*)realloc(img, ((int)recv_size)*sizeof(uchar));
+		img = (uchar*)realloc(img, recv_size*sizeof(uchar));
 
-		rc = zmq_recv(socket, img, (int)recv_size, 0);
+		rc = zmq_recv(socket, img, recv_size, 0);
 
 		x265_nal *pp_nal = new x265_nal(); /*(x265_nal*)malloc(sizeof(pp_nal));*/
 		pp_nal->sizeBytes = (int)recv_size;
@@ -236,6 +237,7 @@ void captureToYuv(){
 				//bitstreamFile.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
 				//receive chunks of data
 
+				
 				rc = zmq_send(socket, &pp_nal->sizeBytes, 8, 0);
 				rc = zmq_send(socket, (const char*)pp_nal->payload, pp_nal->sizeBytes, 0);
 
