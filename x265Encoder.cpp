@@ -25,10 +25,12 @@ x265Encoder::x265Encoder(){
 	x265_param_parse(param, "bframes", "0");
 	x265_param_parse(param, "rc-lookahead", "1");
 	x265_param_parse(param, "repeat-headers", "1");
-	x265_param_parse(param, "pools", "0");
-	x265_param_parse(param, "-qp", "0");
-	x265_param_parse(param, "-q", "0");
-	x265_param_parse(param, "-lossless", "1");
+	//x265_param_parse(param, "pools", "0");
+	//x265_param_parse(param, "keyint", "1");
+	//x265_param_parse(param, "I", "1");
+	//x265_param_parse(param, "min-keyint", "1");
+	//x265_param_parse(param, "i", "1");
+
 
 	/* x265_picture_alloc:
 	*  Allocates an x265_picture instance. The returned picture structure is not

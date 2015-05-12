@@ -50,7 +50,8 @@ void serverYUV(){
 
 	//init socket
 	int rc = 0;
-	uchar* recv_size = (uchar*)malloc(8 * sizeof(byte));
+	
+	int recv_size;
 	uint8_t * img = (uint8_t*)malloc(img_size*sizeof(byte));
 	char buf[BUFLEN];
 
@@ -90,12 +91,12 @@ void serverYUV(){
 
 		//receive chunks of data
 
-		rc = zmq_recv(socket, buf, 8, 0);
-		memcpy(&recv_size, buf, 8);
+		rc = zmq_recv(socket, &recv_size, 8, 0);
+	
 
-		img = (uchar*)realloc(img, ((int)recv_size)*sizeof(uchar));
+		img = (uchar*)realloc(img, recv_size*sizeof(uchar));
 
-		rc = zmq_recv(socket, img, (int)recv_size, 0);
+		rc = zmq_recv(socket, img, recv_size, 0);
 
 		x265_nal *pp_nal = new x265_nal(); /*(x265_nal*)malloc(sizeof(pp_nal));*/
 		pp_nal->sizeBytes = (int)recv_size;
@@ -238,6 +239,7 @@ void captureToYuv(){
 				//bitstreamFile.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
 				//receive chunks of data
 
+				
 				rc = zmq_send(socket, &pp_nal->sizeBytes, 8, 0);
 				rc = zmq_send(socket, (const char*)pp_nal->payload, pp_nal->sizeBytes, 0);
 
@@ -313,6 +315,29 @@ int main(int argc, char** argv){
 	//t1.join();
 	//
 	//yuvDemoStegano();
+	//if (argc > )
+	//if (i + 1 != argc) // Check that we haven't finished parsing already
+	//	if (argv[i] == "-f") {
+	//		// We know the next argument *should* be the filename:
+	//		myFile = argv[i + 1];
+	//	}
+	//	else if (argv[i] == "-p") {
+	//		myPath = argv[i + 1];
+	//	}
+	//	else if (argv[i] == "-o") {
+	//		myOutPath = argv[i + 1];
+	//	}
+	//	else {
+	//		std::cout << "Not enough or invalid arguments, please try again.\n";
+	//		Sleep(2000);
+	//		/*
+	//		*  Sleep for 2 seconds to allow user (if any) to read above statement.
+	//		*  The issue with this is that if we're a backend program to a GUI as mentioned above;
+	//		*  that program would also sleep for 2 seconds. Most programs don't
+	//		*  have this - the console will keep the text there until it scrolls off the page or whatever, so you may aswell leave it out.
+	//		***/
+	//		exit(0);
+	//	}
 
 	thread t2(serverYUV);
 	thread t1(captureToYuv);
