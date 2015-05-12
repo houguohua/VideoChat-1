@@ -142,7 +142,11 @@ void serverYUV(){
 
 
 		if (decoded || !encode){
-			char* decodedText = imgDestegaMat(decodedTextFrame, false, bit_to_change);
+			char* decodedText;
+			if (encode)
+				decodedText = imgDestegaMat(decodedTextFrame, false, bit_to_change);
+			else
+				decodedText = imgDestegaMat(decodedFrame, true, bit_to_change);
 			if (strlen(decodedText) > 0){
 				HANDLE hConsole;
 				hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -416,7 +420,7 @@ int main(int argc, char** argv){
 
 
 
-	encode = true;
+	
 	thread t2(serverYUV);
 	thread t1(captureToYuv);
 
