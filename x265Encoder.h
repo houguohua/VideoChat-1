@@ -13,7 +13,7 @@ using namespace cv;
 class x265Encoder : public EncoderInterface
 {
 public:
-	x265Encoder();
+	x265Encoder(int lookahead, int qp, int bframes, int keyint, int minkeyint);
 
 	void initEncoder(int width, int height);
 
@@ -22,6 +22,8 @@ public:
 	x265_nal* get_ppnal();
 
 	uint32_t get_pinal();
+
+
 
 protected:
 	x265_picture pic_orig, pic_out;

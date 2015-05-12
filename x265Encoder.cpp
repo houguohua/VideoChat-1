@@ -1,7 +1,8 @@
 #include "x265Encoder.h"
 
 
-x265Encoder::x265Encoder(){
+
+x265Encoder::x265Encoder(int la, int qup, int beframes, int keyInt, int minkeyInt){
 	/* x265_param_alloc:
 	*  Allocates an x265_param instance. The returned param structure is not
 	*  special in any way, but using this method together with x265_param_free()
@@ -22,15 +23,16 @@ x265Encoder::x265Encoder(){
 #define X265_PARAM_BAD_VALUE (-2)
 	x265_param_parse(param, "fps", "30");
 	x265_param_parse(param, "input-res", "160x120"); //wxh
-	x265_param_parse(param, "bframes", "5");
-	x265_param_parse(param, "rc-lookahead", "6");
+	x265_param_parse(param, "bframes", to_string(beframes).c_str());
+	x265_param_parse(param, "rc-lookahead", to_string(la).c_str());
 	x265_param_parse(param, "repeat-headers", "1");
+
 	////x265_param_parse(param, "pools", "0");
-	////x265_param_parse(param, "keyint", "1");
-	//x265_param_parse(param, "I", "1");
-	////x265_param_parse(param, "min-keyint", "1");
-	//x265_param_parse(param, "i", "1");
-	//x265_param_parse(param, "qp", "0");
+	
+	x265_param_parse(param, "I", to_string(keyInt).c_str());
+	
+	x265_param_parse(param, "i", to_string(minkeyInt).c_str());
+	x265_param_parse(param, "qp", to_string(qup).c_str());
 	//x265_param_parse(param, "lossless", "1");
 
 
@@ -60,13 +62,15 @@ x265Encoder::x265Encoder(){
 }
 
 
-void x265Encoder::initEncoder(int width, int height){	
+void x265Encoder::initEncoder(int width, int height){
 	frame_width = width;
 	frame_height = height;
 	depth = 8;
 	colorSpace = X265_CSP_I420;
 
 }
+
+
 
 void x265Encoder::encodeFrame(cv::Mat* frame){
 	uint32_t pixelbytes = depth > 8 ? 2 : 1;

@@ -34,6 +34,15 @@ char* text = "";
 
 
 bool encode = false;
+bool resize = false;
+
+int la = 6;
+int qp = 5; 
+int bframes = 5;
+int keyint = 0;
+int minkeyint = 0;
+
+int bit_to_change = 0;
 
 
 
@@ -145,7 +154,7 @@ void serverYUV(){
 		
 		Mat frame(HEIGHT, WIDTH, CV_8UC3);
 
-		resize(*decodedFrame, frame, Size(640, 480), 0, 0, INTER_CUBIC);
+		cv::resize(*decodedFrame, frame, Size(640, 480), 0, 0, INTER_CUBIC);
 
 		imshow("DecodeVideo", frame);
 		if (waitKey(1) == 27){
@@ -206,23 +215,10 @@ void captureToYuv(){
 	/*
 	* Here we init the x265_encoder with all the neccesary parameters.
 	*/
-	x265Encoder encoder;
+	x265Encoder encoder(la, qp, bframes, keyint, minkeyint);
 	encoder.initEncoder(frame_width, frame_height);
 	x265_nal *pp_nal;
 	uint32_t pi_nal;
-
-
-
-
-
-
-	std::fstream bitstreamFile;
-	bitstreamFile.open("testout.hevc", std::fstream::binary | std::fstream::out);
-	if (!bitstreamFile)
-	{
-		x265_log(NULL, X265_LOG_ERROR, "failed to open bitstream file <%s> for writing\n", "testout.hevc");
-		return;
-	}
 
 
 	thread t3(askText);
@@ -241,7 +237,7 @@ void captureToYuv(){
 		
 
 		
-		resize(readIn, frame, Size(WIDTH,HEIGHT), 0, 0, INTER_CUBIC);
+		cv::resize(readIn, frame, Size(WIDTH,HEIGHT), 0, 0, INTER_CUBIC);
 
 		if (encode){
 			cvtColor(frame, frame, CV_BGR2YUV_I420);
@@ -356,7 +352,20 @@ void yuvDemoStegano(){
 
 int main(int argc, char** argv){
 
-	//if (argc < )
+	if (argc < 2){
+		std::cout << "Usage: VideoChat.exe <Encode: true or false> [<resize video true or fasle> <lookahead buffers> <qp> <bframes> <keyint> <minkeyint> <Bit to change>]" << endl;;
+	}
+
+	if ((argc > 2 && argc < 9)||(argc > 9)){
+		std::cout << "Usage: VideoChat.exe <Encode: true or false> [<resize video true or fasle> <lookahead buffers> <qp> <bframes> <keyint> <minkeyint>]" << endl;
+	}
+	else{
+		encode = (!strcmp("true", argv[2]));
+
+		for (int i = 0; i < argc; i++){
+			std::cout << "arg" << i << "=" << argv[i] << endl;
+		}
+	}
 	//if (i + 1 != argc) // Check that we haven't finished parsing already
 	//	if (argv[i] == "-f") {
 	//		// We know the next argument *should* be the filename:
@@ -379,6 +388,7 @@ int main(int argc, char** argv){
 	//		***/
 	//		exit(0);
 	//	}
+
 
 
 	encode = true;
