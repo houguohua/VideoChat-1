@@ -22,14 +22,16 @@ x265Encoder::x265Encoder(){
 #define X265_PARAM_BAD_VALUE (-2)
 	x265_param_parse(param, "fps", "30");
 	x265_param_parse(param, "input-res", "160x120"); //wxh
-	x265_param_parse(param, "bframes", "0");
-	x265_param_parse(param, "rc-lookahead", "1");
+	//x265_param_parse(param, "bframes", "0");
+	x265_param_parse(param, "rc-lookahead", "5");
 	x265_param_parse(param, "repeat-headers", "1");
 	//x265_param_parse(param, "pools", "0");
 	//x265_param_parse(param, "keyint", "1");
-	//x265_param_parse(param, "I", "1");
+	x265_param_parse(param, "-I", "1");
 	//x265_param_parse(param, "min-keyint", "1");
-	//x265_param_parse(param, "i", "1");
+	x265_param_parse(param, "-i", "1");
+	x265_param_parse(param, "qp", "0");
+//	x265_param_parse(param, "lossless", "1");
 
 
 	/* x265_picture_alloc:
