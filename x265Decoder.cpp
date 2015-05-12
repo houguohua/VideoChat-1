@@ -50,7 +50,6 @@ void x265Decoder::initDecoder(int width, int height){
 
 	frame_count = 0;
 
-
 }
 
 x265Decoder::~x265Decoder(){
@@ -61,7 +60,6 @@ x265Decoder::~x265Decoder(){
 	avpkt.size = 0;
 	avcodec_close(av_codec_context);
 	av_free(av_codec_context);
-	//av_frame_free(&frame);
 }
 
 Mat x265Decoder::avframe_to_cvmat(AVFrame *frame)
