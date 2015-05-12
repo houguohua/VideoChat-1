@@ -23,7 +23,6 @@ x265Decoder::x265Decoder(){
 
 
 void x265Decoder::initDecoder(int width, int height){
-
 	frame_width = width;
 	frame_height = height;
 
@@ -49,7 +48,6 @@ void x265Decoder::initDecoder(int width, int height){
 	char *rgb_buffer = new char[120 * 160 * 3];
 
 	frame_count = 0;
-
 }
 
 x265Decoder::~x265Decoder(){
@@ -110,8 +108,6 @@ void x265Decoder::decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, Mat* decodedT
 	av_packet.size = pp_nal->sizeBytes;
 
 	avcodec_decode_video2(av_codec_context, av_frame, &got_frame, &av_packet);
-
-
 
 	if (got_frame){
 		*decodedFrame = avframe_to_cvmat(av_frame, false);
