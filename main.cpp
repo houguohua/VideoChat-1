@@ -390,14 +390,6 @@ int main(int argc, char** argv){
 
 		char* changebit = argv[8];
 		bit_to_change = std::stoi(argv[8]);
-
-
-
-
-
-		for (int i = 0; i < argc; i++){
-			std::cout << "arg" << i << "=" << argv[i] << endl;
-		}
 	}
 	//if (i + 1 != argc) // Check that we haven't finished parsing already
 	//	if (argv[i] == "-f") {
