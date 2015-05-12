@@ -79,7 +79,8 @@ void serverYUV(){
 	*/
 	int frame_width = 160;
 	int frame_height = 120;
-	initDecoder(frame_width, frame_height);
+	x265Decoder decoder;
+	decoder.initDecoder(frame_width, frame_height);
 	
 
 
@@ -103,7 +104,7 @@ void serverYUV(){
 		Mat* decodedFrame = new Mat(120, 160, CV_8UC3);
 		bool decoded = false;
 
-		decodeFrame(pp_nal, decodedFrame, &decoded);
+		decoder.decodeFrame(pp_nal, decodedFrame, &decoded);
 
 		
 
@@ -224,6 +225,7 @@ void captureToYuv(){
 		
 		img_size = (frame.dataend - frame.datastart);
 		
+		imshow("Server", frame);
 
 		//Encode a frame using the x265_encoder
 		encoder.encodeFrame(&frame);
