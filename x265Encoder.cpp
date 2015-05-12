@@ -28,10 +28,13 @@ x265Encoder::x265Encoder(){
 #define X265_PARAM_BAD_VALUE (-2)
 	x265_param_parse(param, "fps", "30");
 	x265_param_parse(param, "input-res", "160x120"); //wxh
-	x265_param_parse(param, "bframes", "3");
-	x265_param_parse(param, "rc-lookahead", "5");
+	x265_param_parse(param, "bframes", "0");
+	x265_param_parse(param, "rc-lookahead", "1");
 	x265_param_parse(param, "repeat-headers", "1");
-	x265_param_parse(param, "pools", "none");
+	x265_param_parse(param, "pools", "0");
+	x265_param_parse(param, "-qp", "0");
+	x265_param_parse(param, "-q", "0");
+	x265_param_parse(param, "-lossless", "1");
 
 	/* x265_picture_alloc:
 	*  Allocates an x265_picture instance. The returned picture structure is not
