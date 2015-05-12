@@ -126,9 +126,9 @@ char* imgDestegaMat(cv::Mat *img) {
 					return res;
 				}
 				else{
-					/*if (!firstDel ){
+					if (!firstDel ){
 						return "";
-					}*/
+					}
 					length++;
 					res = (char*)realloc(res, sizeof(char)*length);
 					res[length - 1] = (char)ToByte(tmp);

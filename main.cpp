@@ -313,6 +313,29 @@ int main(int argc, char** argv){
 	//t1.join();
 	//
 	//yuvDemoStegano();
+	//if (argc > )
+	//if (i + 1 != argc) // Check that we haven't finished parsing already
+	//	if (argv[i] == "-f") {
+	//		// We know the next argument *should* be the filename:
+	//		myFile = argv[i + 1];
+	//	}
+	//	else if (argv[i] == "-p") {
+	//		myPath = argv[i + 1];
+	//	}
+	//	else if (argv[i] == "-o") {
+	//		myOutPath = argv[i + 1];
+	//	}
+	//	else {
+	//		std::cout << "Not enough or invalid arguments, please try again.\n";
+	//		Sleep(2000);
+	//		/*
+	//		*  Sleep for 2 seconds to allow user (if any) to read above statement.
+	//		*  The issue with this is that if we're a backend program to a GUI as mentioned above;
+	//		*  that program would also sleep for 2 seconds. Most programs don't
+	//		*  have this - the console will keep the text there until it scrolls off the page or whatever, so you may aswell leave it out.
+	//		***/
+	//		exit(0);
+	//	}
 
 	thread t2(serverYUV);
 	thread t1(captureToYuv);
