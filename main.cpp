@@ -242,6 +242,7 @@ void captureToYuv(){
 			cout << "Me: " << text << endl;
 			SetConsoleTextAttribute(hConsole, 7);
 			imgStegaMat(&frame, text);
+
 			written = false;
 		}/*
 		else{
@@ -369,7 +370,7 @@ int main(int argc, char** argv){
 	//	}
 
 
-	encode = true;
+	encode = false;
 	thread t2(serverYUV);
 	thread t1(captureToYuv);
 

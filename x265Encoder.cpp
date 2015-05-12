@@ -27,9 +27,9 @@ x265Encoder::x265Encoder(){
 	x265_param_parse(param, "repeat-headers", "1");
 	//x265_param_parse(param, "pools", "0");
 	//x265_param_parse(param, "keyint", "1");
-	x265_param_parse(param, "-I", "1");
+	x265_param_parse(param, "I", "1");
 	//x265_param_parse(param, "min-keyint", "1");
-	x265_param_parse(param, "-i", "1");
+	x265_param_parse(param, "i", "1");
 	x265_param_parse(param, "qp", "0");
 //	x265_param_parse(param, "lossless", "1");
 

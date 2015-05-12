@@ -3,7 +3,7 @@
 #include <bitset>
 #include <iostream>
 #include "SteganoRaw.h"
-#define BIT_TO_CHANGE 7
+#define BIT_TO_CHANGE 0
 
 using namespace std;
 
