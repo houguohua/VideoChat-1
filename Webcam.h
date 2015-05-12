@@ -24,6 +24,7 @@ public:
 	int getWidth();
 
 	int getHeight();
+
 protected:
 	int width;
 	int height;

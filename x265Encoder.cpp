@@ -1,30 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "SteganoRaw.h"
-#include "encoder.h"
-#include "yuv.h"
-#include "param.h"
+#include "x265Encoder.h"
 
 
-using namespace cv;
-using namespace std;
-
-int frame_width;
-int frame_height;
-x265_picture pic_orig, pic_out;
-x265_picture *pic_in, *pic_recon;
-x265_encoder *encoder;
-x265_nal *pp_nal;
-uint32_t pi_nal;
-int depth, colorSpace;
-
-void initEncoder(int width, int height){
-	
-	frame_width = width;
-	frame_height = height;
-	depth = 8;
-	colorSpace = X265_CSP_I420;
-
+x265Encoder::x265Encoder(){
 	/* x265_param_alloc:
 	*  Allocates an x265_param instance. The returned param structure is not
 	*  special in any way, but using this method together with x265_param_free()
@@ -41,8 +18,8 @@ void initEncoder(int width, int height){
 	*  note: BAD_VALUE occurs only if it can't even parse the value,
 	*  numerical range is not checked until x265_encoder_open().
 	*  value=NULL means "true" for boolean options, but is a BAD_VALUE for non-booleans. */
-	#define X265_PARAM_BAD_NAME  (-1)
-	#define X265_PARAM_BAD_VALUE (-2)
+#define X265_PARAM_BAD_NAME  (-1)
+#define X265_PARAM_BAD_VALUE (-2)
 	x265_param_parse(param, "fps", "30");
 	x265_param_parse(param, "input-res", "160x120"); //wxh
 	x265_param_parse(param, "bframes", "0");
@@ -75,12 +52,21 @@ void initEncoder(int width, int height){
 	*      *pi_nal is the number of NAL units outputted in pp_nal.
 	*      returns negative on error, zero if no NAL units returned.
 	*      the payloads of all output NALs are guaranteed to be sequential in memory. */
-	x265_nal *pp_nal = NULL;
-	uint32_t pi_nal = 0;
+	pp_nal = NULL;
+	pi_nal = 0;
 	encoder = x265_encoder_open(param);
 }
 
-void encodeFrame(cv::Mat* frame){
+
+void x265Encoder::initEncoder(int width, int height){	
+	frame_width = width;
+	frame_height = height;
+	depth = 8;
+	colorSpace = X265_CSP_I420;
+
+}
+
+void x265Encoder::encodeFrame(cv::Mat* frame){
 	uint32_t pixelbytes = depth > 8 ? 2 : 1;
 	pic_orig.colorSpace = colorSpace;
 	pic_orig.bitDepth = depth;
@@ -97,10 +83,10 @@ void encodeFrame(cv::Mat* frame){
 	}
 }
 
-x265_nal* get_ppnal(){
+x265_nal* x265Encoder::get_ppnal(){
 	return pp_nal;
 }
 
-uint32_t get_pinal(){
+uint32_t x265Encoder::get_pinal(){
 	return pi_nal;
 }

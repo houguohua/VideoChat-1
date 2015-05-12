@@ -18,8 +18,7 @@
 #include "yuv.h"
 #include "param.h"
 
-OpenCVWebcam::OpenCVWebcam()
-{
+OpenCVWebcam::OpenCVWebcam(){
 	stream1 = new VideoCapture(0);
 	stream1->set(CV_CAP_PROP_CONVERT_RGB, false);
 }

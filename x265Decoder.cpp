@@ -1,36 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "SteganoRaw.h"
-#include "encoder.h"
-#include "yuv.h"
-#include "param.h"
-#include <iostream>
-#include <opencv\cv.h>
-extern "C"
-{
-#include <libavutil/opt.h>
-#include <libavcodec/avcodec.h>
-#include <libavutil/channel_layout.h>
-#include <libavutil/common.h>
-#include <libavutil/imgutils.h>
-#include <libavutil/mathematics.h>
-#include <libavutil/samplefmt.h>
-#include <libswscale/swscale.h>
-}
-
-#pragma comment(lib, "avcodec.lib")
+#include "x265Decoder.h"
 
 using namespace cv;
 using namespace std;
 
-AVCodecContext *av_codec_context;
-AVFrame *av_frame;
-AVPacket avpkt;
-int frame_count;
-int got_frame;
-
-void initDecoder(int width, int height){
-	AVCodec *codec;
+x265Decoder::x265Decoder(){
 	av_codec_context = NULL;
 
 	/* register all the codecs */
@@ -46,6 +19,13 @@ void initDecoder(int width, int height){
 		fprintf(stderr, "Could not allocate video codec context\n");
 		exit(1);
 	}
+}
+
+
+void x265Decoder::initDecoder(int width, int height){
+
+	frame_width = width;
+	frame_height = height;
 
 	av_init_packet(&avpkt);
 
@@ -64,9 +44,6 @@ void initDecoder(int width, int height){
 		exit(1);
 	}
 
-
-	//AVFrame *av_frame_ = icv_alloc_picture_FFMPEG(PIX_FMT_YUV420P, 160, 120, true);
-	//AVFrame *av_frame_RGB_ = icv_alloc_picture_FFMPEG(PIX_FMT_RGB24, 160, 120, true);
 	av_frame = av_frame_alloc();
 
 	char *rgb_buffer = new char[120 * 160 * 3];
@@ -76,7 +53,7 @@ void initDecoder(int width, int height){
 
 }
 
-void freeDecoder(){
+x265Decoder::~x265Decoder(){
 	/* some codecs, such as MPEG, transmit the I and P frame with a
 	latency of one frame. You must do the following to have a
 	chance to get the last frame of the video */
@@ -87,7 +64,7 @@ void freeDecoder(){
 	//av_frame_free(&frame);
 }
 
-cv::Mat avframe_to_cvmat(AVFrame *frame)
+Mat x265Decoder::avframe_to_cvmat(AVFrame *frame)
 {
 	AVFrame dst;
 	cv::Mat m;
@@ -111,7 +88,7 @@ cv::Mat avframe_to_cvmat(AVFrame *frame)
 	return m;
 }
 
-void decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, bool* frameDecoded){
+void x265Decoder::decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, bool* frameDecoded){
 
 	AVPacket av_packet;
 	got_frame = 0;
@@ -123,8 +100,6 @@ void decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, bool* frameDecoded){
 
 	avcodec_decode_video2(av_codec_context, av_frame, &got_frame, &av_packet);
 
-
-
 	if (got_frame){
 		*decodedFrame = avframe_to_cvmat(av_frame);
 		*frameDecoded = true;
@@ -132,52 +107,6 @@ void decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, bool* frameDecoded){
 	else{
 		*frameDecoded = false;
 	}
-
-	/*Mat m;
-	AVFrame dst;
-	int w = 160;
-	int h = 120;
-	m = cv::Mat(h, w, CV_8UC3);
-	dst.data[0] = (uint8_t *)m.data;
-	avpicture_fill((AVPicture *)&dst, dst.data[0], PIX_FMT_BGR24, w, h);
-
-	enum PixelFormat src_pixfmt = (enum PixelFormat)av_frame->format;
-	enum PixelFormat dst_pixfmt = PIX_FMT_BGR24;
-	SwsContext *convert_ctx = sws_getContext(w, h, src_pixfmt, w, h, dst_pixfmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
-
-	if (convert_ctx == NULL) {
-		fprintf(stderr, "Cannot initialize the conversion context!\n");
-		exit(1);
-	}
-
-	sws_scale(convert_ctx, av_frame->data, av_frame->linesize, 0, h,
-		dst.data, dst.linesize);
-	imshow("MyVideo", m);
-	waitKey(30);*/
 }
 
-
-static AVFrame * icv_alloc_picture_FFMPEG(int pix_fmt, int width, int height, bool alloc)
-{
-	AVFrame * picture;
-	uint8_t * picture_buf;
-	int size;
-
-	picture = av_frame_alloc();
-	if (!picture)
-		return NULL;
-	size = avpicture_get_size((PixelFormat)pix_fmt, width, height);
-	if (alloc)
-	{
-		picture_buf = (uint8_t *)malloc(size);
-		if (!picture_buf)
-		{
-			avcodec_free_frame(&picture);
-			std::cout << "picture buff = NULL" << std::endl;
-			return NULL;
-		}
-		avpicture_fill((AVPicture *)picture, picture_buf, (PixelFormat)pix_fmt, width, height);
-	}
-	return picture;
-}
 

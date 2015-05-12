@@ -5,6 +5,7 @@
 #include <opencv\cv.h>
 #include <opencv\highgui.h>
 #include "Webcam.h"
+
 using namespace std;
 using namespace cv;
 
