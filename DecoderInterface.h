@@ -13,7 +13,7 @@ class DecoderInterface{
 public:
 	virtual void initDecoder(int width, int height) = 0;
 
-	virtual void decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, bool* frameDecoded) = 0;
+	virtual void decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, Mat* decodedTextFrame,  bool* frameDecoded) = 0;
 
 protected:
 	int frame_width;

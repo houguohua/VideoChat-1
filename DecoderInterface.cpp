@@ -15,6 +15,6 @@ void DecoderInterface::initDecoder(int width, int height){
 	frame_height = height;
 }
 
-void DecoderInterface::decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, bool* frameDecoded){
+void DecoderInterface::decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, Mat* decodedTextFrame,  bool* frameDecoded){
 	//Do nothing
 }

@@ -33,9 +33,9 @@ public:
 
 	void initDecoder(int width, int height);
 
-	void decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, bool* frameDecoded);
+	void decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, Mat* decodedTextFrame,  bool* frameDecoded);
 
-	Mat avframe_to_cvmat(AVFrame *frame);
+	Mat avframe_to_cvmat(AVFrame *frame, bool text);
 
 protected:
 	AVCodec *codec;

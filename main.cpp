@@ -21,13 +21,17 @@
 #include "x265Encoder.h"
 #include "x265Decoder.h"
 
+#define WIDTH 160
+#define HEIGHT 120
 
 using namespace cv;
 using namespace std;
-int img_size = 57600;
+//int img_size = 57600;
+int img_size = 3*WIDTH*HEIGHT;
 #define BUFLEN 1024
 bool written = false;
 char* text = "";
+
 
 bool encode = false;
 
@@ -81,8 +85,8 @@ void serverYUV(){
 	/*
 	* Here we init the x265_decoder with all the neccesary parameters.
 	*/
-	int frame_width = 160;
-	int frame_height = 120;
+	int frame_width = WIDTH;
+	int frame_height = HEIGHT;
 	x265Decoder decoder;
 	decoder.initDecoder(frame_width, frame_height);
 
@@ -109,7 +113,8 @@ void serverYUV(){
 
 
 		
-		Mat* decodedFrame = new Mat(120, 160, CV_8UC3);
+		Mat* decodedFrame = new Mat(frame_height, frame_width, CV_8UC3);
+		Mat* decodedTextFrame = new Mat(frame_height, frame_width, CV_8UC3);
 		bool decoded = false;
 
 
@@ -117,7 +122,7 @@ void serverYUV(){
 			x265_nal *pp_nal = new x265_nal(); /*(x265_nal*)malloc(sizeof(pp_nal));*/
 			pp_nal->sizeBytes = (int)recv_size;
 			pp_nal->payload = img;
-			decoder.decodeFrame(pp_nal, decodedFrame, &decoded);
+			decoder.decodeFrame(pp_nal, decodedFrame, decodedTextFrame, &decoded);
 		}
 		else{
 			decodedFrame->data = img;
@@ -128,7 +133,7 @@ void serverYUV(){
 
 
 		if (decoded || !encode){
-			char* decodedText = imgDestegaMat(decodedFrame, true);
+			char* decodedText = imgDestegaMat(decodedTextFrame, false);
 			if (strlen(decodedText) > 0){
 				HANDLE hConsole;
 				hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -138,7 +143,11 @@ void serverYUV(){
 			}
 		}
 		
-		imshow("DecodeVideo", *decodedFrame);
+		Mat frame(HEIGHT, WIDTH, CV_8UC3);
+
+		resize(*decodedFrame, frame, Size(640, 480), 0, 0, INTER_CUBIC);
+
+		imshow("DecodeVideo", frame);
 		if (waitKey(1) == 27){
 			break;
 		}
@@ -172,8 +181,8 @@ void captureToYuv(){
 
 	//Launch webcam and set resolution of 160x120 for faster encoding
 	OpenCVWebcam vcap;
-	vcap.setWidth(160);
-	vcap.setHeight(120);
+	vcap.setWidth(WIDTH);
+	vcap.setHeight(HEIGHT);
 	int frame_width = vcap.getWidth();
 	int frame_height = vcap.getHeight();
 	int fps = vcap.getFPS();
@@ -227,10 +236,12 @@ void captureToYuv(){
 		//convert frame to YUV
 		//Mat frame = readIn.clone();
 
-		Mat frame(120, 160, CV_8UC3);
+		Mat frame(HEIGHT, WIDTH, CV_8UC3);
 
 		
-		resize(readIn, frame, Size(160, 120), 0, 0, INTER_CUBIC);
+
+		
+		resize(readIn, frame, Size(WIDTH,HEIGHT), 0, 0, INTER_CUBIC);
 
 		if (encode){
 			cvtColor(frame, frame, CV_BGR2YUV_I420);
@@ -319,7 +330,7 @@ void check_error(int val) {
 void decodeFromText(char* fileName){
 
 
-	Mat testFrame(120, 160, CV_16SC3);
+	Mat testFrame(HEIGHT, WIDTH, CV_16SC3);
 	std::ifstream inFile(fileName);
 	for (int i = 0; i < (testFrame.dataend - testFrame.datastart) / sizeof(uchar); i++){
 		inFile >> testFrame.data[i];
@@ -345,32 +356,32 @@ void yuvDemoStegano(){
 
 int main(int argc, char** argv){
 
-	//if (argc > )
-	//if (i + 1 != argc) // Check that we haven't finished parsing already
-	//	if (argv[i] == "-f") {
-	//		// We know the next argument *should* be the filename:
-	//		myFile = argv[i + 1];
-	//	}
-	//	else if (argv[i] == "-p") {
-	//		myPath = argv[i + 1];
-	//	}
-	//	else if (argv[i] == "-o") {
-	//		myOutPath = argv[i + 1];
-	//	}
-	//	else {
-	//		std::cout << "Not enough or invalid arguments, please try again.\n";
-	//		Sleep(2000);
-	//		/*
-	//		*  Sleep for 2 seconds to allow user (if any) to read above statement.
-	//		*  The issue with this is that if we're a backend program to a GUI as mentioned above;
-	//		*  that program would also sleep for 2 seconds. Most programs don't
-	//		*  have this - the console will keep the text there until it scrolls off the page or whatever, so you may aswell leave it out.
-	//		***/
-	//		exit(0);
-	//	}
+	if (argc < )
+	if (i + 1 != argc) // Check that we haven't finished parsing already
+		if (argv[i] == "-f") {
+			// We know the next argument *should* be the filename:
+			myFile = argv[i + 1];
+		}
+		else if (argv[i] == "-p") {
+			myPath = argv[i + 1];
+		}
+		else if (argv[i] == "-o") {
+			myOutPath = argv[i + 1];
+		}
+		else {
+			std::cout << "Not enough or invalid arguments, please try again.\n";
+			Sleep(2000);
+			/*
+			*  Sleep for 2 seconds to allow user (if any) to read above statement.
+			*  The issue with this is that if we're a backend program to a GUI as mentioned above;
+			*  that program would also sleep for 2 seconds. Most programs don't
+			*  have this - the console will keep the text there until it scrolls off the page or whatever, so you may aswell leave it out.
+			***/
+			exit(0);
+		}
 
 
-	encode = false;
+	encode = true;
 	thread t2(serverYUV);
 	thread t1(captureToYuv);
 

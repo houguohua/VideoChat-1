@@ -62,7 +62,7 @@ x265Decoder::~x265Decoder(){
 	av_free(av_codec_context);
 }
 
-Mat x265Decoder::avframe_to_cvmat(AVFrame *frame)
+Mat x265Decoder::avframe_to_cvmat(AVFrame *frame, bool text)
 {
 	AVFrame dst;
 	cv::Mat m;
@@ -72,11 +72,24 @@ Mat x265Decoder::avframe_to_cvmat(AVFrame *frame)
 	int w = frame->width, h = frame->height;
 	m = cv::Mat(h, w, CV_8UC3);
 	dst.data[0] = (uint8_t *)m.data;
-	avpicture_fill((AVPicture *)&dst, dst.data[0], PIX_FMT_BGR24, w, h);
+	if (text){
+		avpicture_fill((AVPicture *)&dst, dst.data[0], PIX_FMT_YUV420P, w, h);
+	}
+	else{
+		avpicture_fill((AVPicture *)&dst, dst.data[0], PIX_FMT_BGR24, w, h);
+	}
+
 
 	struct SwsContext *convert_ctx = NULL;
 	enum PixelFormat src_pixfmt = (enum PixelFormat)frame->format;
-	enum PixelFormat dst_pixfmt = PIX_FMT_BGR24;
+	enum PixelFormat dst_pixfmt;
+	if (text){
+		dst_pixfmt = PIX_FMT_YUV420P;
+	}
+	else{
+		dst_pixfmt = PIX_FMT_BGR24;
+	}
+
 	convert_ctx = sws_getContext(w, h, src_pixfmt, w, h, dst_pixfmt,
 		SWS_FAST_BILINEAR, NULL, NULL, NULL);
 	sws_scale(convert_ctx, frame->data, frame->linesize, 0, h,
@@ -86,7 +99,7 @@ Mat x265Decoder::avframe_to_cvmat(AVFrame *frame)
 	return m;
 }
 
-void x265Decoder::decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, bool* frameDecoded){
+void x265Decoder::decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, Mat* decodedTextFrame, bool* frameDecoded){
 
 	AVPacket av_packet;
 	got_frame = 0;
@@ -98,8 +111,11 @@ void x265Decoder::decodeFrame(x265_nal *pp_nal, Mat* decodedFrame, bool* frameDe
 
 	avcodec_decode_video2(av_codec_context, av_frame, &got_frame, &av_packet);
 
+
+
 	if (got_frame){
-		*decodedFrame = avframe_to_cvmat(av_frame);
+		*decodedFrame = avframe_to_cvmat(av_frame, false);
+		*decodedTextFrame = avframe_to_cvmat(av_frame, true);
 		*frameDecoded = true;
 	}
 	else{
