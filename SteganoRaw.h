@@ -22,5 +22,5 @@ int imgStegaMat(cv::Mat*, char*);
 * An error will result a return of -1 or 0 on successfull decryption.
 */
 char* imgDestega(IplImage*);
-char* imgDestegaMat(cv::Mat*);
+char* imgDestegaMat(cv::Mat*, bool safeExtraction);
 #endif // !STEGANORAW_H

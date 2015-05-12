@@ -128,7 +128,7 @@ void serverYUV(){
 
 
 		if (decoded || !encode){
-			char* decodedText = imgDestegaMat(decodedFrame);
+			char* decodedText = imgDestegaMat(decodedFrame, true);
 			if (strlen(decodedText) > 0){
 				HANDLE hConsole;
 				hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -139,7 +139,7 @@ void serverYUV(){
 		}
 		
 		imshow("DecodeVideo", *decodedFrame);
-		if (waitKey(1) > 0){
+		if (waitKey(1) == 27){
 			break;
 		}
 
@@ -317,20 +317,14 @@ void check_error(int val) {
 
 void decodeFromText(char* fileName){
 
-	/*Mat testFrame(cvLoadImageYUV(fileName, 160, 120));
-	char* decodedText = imgDestegaMat(&testFrame);
-	for (int i = 0; i < 10; i++){
-	cout << "Char: " << (unsigned int)decodedText[i] << endl;
-	}
-	cout << "Decoded Text: " << imgDestegaMat(&testFrame) << endl;
-	*/
+
 	Mat testFrame(120, 160, CV_16SC3);
 	std::ifstream inFile(fileName);
 	for (int i = 0; i < (testFrame.dataend - testFrame.datastart) / sizeof(uchar); i++){
 		inFile >> testFrame.data[i];
 	}
 
-	std::cout << "Decoded Text: " << imgDestegaMat(&testFrame) << endl;
+	std::cout << "Decoded Text: " << imgDestegaMat(&testFrame, false) << endl;
 
 	return;
 }
@@ -349,12 +343,7 @@ void yuvDemoStegano(){
 }
 
 int main(int argc, char** argv){
-	//thread t2(client);
-	//t2.join();
-	//thread t1(server);
-	//t1.join();
-	//
-	//yuvDemoStegano();
+
 	//if (argc > )
 	//if (i + 1 != argc) // Check that we haven't finished parsing already
 	//	if (argv[i] == "-f") {
@@ -379,7 +368,8 @@ int main(int argc, char** argv){
 	//		exit(0);
 	//	}
 
-	encode = false;
+
+	encode = true;
 	thread t2(serverYUV);
 	thread t1(captureToYuv);
 
@@ -389,14 +379,4 @@ int main(int argc, char** argv){
 
 
 	return 0;
-
-	//
-	//
-	//getchar();
-	//imwrite("C:/Users/kiani/Downloads/test.jpg", matimg);
-	////IplImage* img2 = cvLoadImage("C:/Users/kiani/Downloads/test.jpg");
-	//printf("result: %s",imgDestega(img));
-	//std::getchar();
-	//captureToYuv();
-
 }
