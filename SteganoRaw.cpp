@@ -8,7 +8,6 @@
 using namespace std;
 
 
-
 unsigned char ToByte(bool b[8])
 {
 	unsigned char c = 0;
