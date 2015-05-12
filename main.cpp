@@ -34,7 +34,7 @@ char* text = "";
 
 
 bool encode = false;
-bool resize = false;
+bool resizeVideo = false;
 
 int la = 6;
 int qp = 5; 
@@ -142,7 +142,7 @@ void serverYUV(){
 
 
 		if (decoded || !encode){
-			char* decodedText = imgDestegaMat(decodedTextFrame, false);
+			char* decodedText = imgDestegaMat(decodedTextFrame, false, bit_to_change);
 			if (strlen(decodedText) > 0){
 				HANDLE hConsole;
 				hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -154,12 +154,19 @@ void serverYUV(){
 		
 		Mat frame(HEIGHT, WIDTH, CV_8UC3);
 
-		cv::resize(*decodedFrame, frame, Size(640, 480), 0, 0, INTER_CUBIC);
-
-		imshow("DecodeVideo", frame);
+		if (resizeVideo){
+			cv::resize(*decodedFrame, frame, Size(640, 480), 0, 0, INTER_CUBIC);
+			imshow("DecodeVideo", frame);
+		}
+		else{
+			imshow("DecodeVideo", *decodedFrame);	
+		}
 		if (waitKey(1) == 27){
 			break;
 		}
+		
+
+		
 
 
 
@@ -248,7 +255,7 @@ void captureToYuv(){
 			SetConsoleTextAttribute(hConsole, 12);
 			cout << "Me: " << text << endl;
 			SetConsoleTextAttribute(hConsole, 7);
-			imgStegaMat(&frame, text);
+			imgStegaMat(&frame, text, bit_to_change);
 
 			written = false;
 		}/*
@@ -332,7 +339,7 @@ void decodeFromText(char* fileName){
 		inFile >> testFrame.data[i];
 	}
 
-	std::cout << "Decoded Text: " << imgDestegaMat(&testFrame, false) << endl;
+	std::cout << "Decoded Text: " << imgDestegaMat(&testFrame, false, bit_to_change) << endl;
 
 	return;
 }
@@ -353,18 +360,36 @@ void yuvDemoStegano(){
 int main(int argc, char** argv){
 
 	if (argc < 2){
-		std::cout << "Usage: VideoChat.exe <Encode: true or false> [<resize video true or fasle> <lookahead buffers> <qp> <bframes> <keyint> <minkeyint> <Bit to change>]" << endl;;
+		std::cout << "Usage: VideoChat.exe <Encode: true or false> [<resize video true or fasle> <lookahead buffers> <qp> <bframes> <keyint> <minkeyint> <Bit to change>]" << endl;
+		getchar();
+		exit(0);
 	}
 
 	if ((argc > 2 && argc < 9)||(argc > 9)){
 		std::cout << "Usage: VideoChat.exe <Encode: true or false> [<resize video true or fasle> <lookahead buffers> <qp> <bframes> <keyint> <minkeyint>]" << endl;
+		getchar();
+		exit(0);
+	}
+	else if (argc == 2){
+		encode = (0==strcmp("true", argv[1]));
 	}
 	else{
-		encode = (!strcmp("true", argv[2]));
+		encode = (0==strcmp("true", argv[1]));
 
-		for (int i = 0; i < argc; i++){
-			std::cout << "arg" << i << "=" << argv[i] << endl;
-		}
+		resizeVideo = (0==strcmp("true", argv[2]));
+
+		la = std::stoi(argv[3]);
+
+		qp = std::stoi(argv[4]);
+
+		bframes = std::stoi(argv[5]);
+
+		keyint = std::stoi(argv[6]);
+
+		minkeyint = std::stoi(argv[7]);
+
+		char* changebit = argv[8];
+		bit_to_change = std::stoi(argv[8]);
 	}
 	//if (i + 1 != argc) // Check that we haven't finished parsing already
 	//	if (argv[i] == "-f") {

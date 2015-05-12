@@ -3,7 +3,7 @@
 #include <bitset>
 #include <iostream>
 #include "SteganoRaw.h"
-#define BIT_TO_CHANGE 7
+
 
 using namespace std;
 
@@ -18,7 +18,7 @@ unsigned char ToByte(bool b[8])
 }
 
 
-int imgStegaMat(cv::Mat* img, char *msg) {
+int imgStegaMat(cv::Mat* img, char *msg, int BIT_TO_CHANGE) {
 	int width = img->cols;
 	int height = img->rows;
 	int len = strlen(msg);
@@ -77,7 +77,7 @@ int imgStegaMat(cv::Mat* img, char *msg) {
 
 
 
-char* imgDestegaMat(cv::Mat *img, bool safeExtraction) {
+char* imgDestegaMat(cv::Mat *img, bool safeExtraction, int BIT_TO_CHANGE) {
 	int width = img->cols;
 	int height = img->rows;
 	int length = 0;
