@@ -24,7 +24,7 @@
 
 using namespace cv;
 using namespace std;
-int img_size = 28800;
+int img_size = 57600;
 #define BUFLEN 1024
 bool written = false;
 char* text = "";
@@ -44,6 +44,7 @@ void askText(){
 		getline(cin, inputText);
 
 	}
+	exit(0);
 }
 
 
@@ -54,7 +55,7 @@ void serverYUV(){
 	int rc = 0;
 
 	uint32_t recv_size;
-	uint8_t * img = (uint8_t*)malloc(img_size*sizeof(byte));
+	uint8_t * img = (uint8_t*)malloc(img_size*sizeof(uint8_t));
 	char buf[BUFLEN];
 
 	void *context = zmq_ctx_new();
@@ -102,6 +103,7 @@ void serverYUV(){
 
 		}
 		else{
+			
 			rc = zmq_recv(socket, img, img_size, 0);
 		}
 
@@ -132,6 +134,7 @@ void serverYUV(){
 				hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 				SetConsoleTextAttribute(hConsole, 11);
 				cout << "Partner: " << decodedText << endl;
+				SetConsoleTextAttribute(hConsole, 7);
 			}
 		}
 		
@@ -237,6 +240,7 @@ void captureToYuv(){
 			hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 			SetConsoleTextAttribute(hConsole, 12);
 			cout << "Me: " << text << endl;
+			SetConsoleTextAttribute(hConsole, 7);
 			imgStegaMat(&frame, text);
 			written = false;
 		}/*
@@ -245,9 +249,12 @@ void captureToYuv(){
 		}*/
 
 
-
+		int size_send = 0;
 		if (encode){
 			img_size = (frame.dataend - frame.datastart);
+		}
+		else{
+			size_send = frame.total()*frame.elemSize();
 		}
 		
 
@@ -280,7 +287,7 @@ void captureToYuv(){
 			}
 		}
 		else{
-			rc = zmq_send(socket, (const char*)frame.data, img_size, 0);
+			rc = zmq_send(socket, (uchar*)frame.data, size_send, 0);
 			
 		}
 		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
@@ -296,14 +303,14 @@ void captureToYuv(){
 
 	zmq_close(socket);
 	zmq_ctx_destroy(context);
-	exit(0);
+	std::exit(0);
 }
 
 void check_error(int val) {
 	if (val < 0){
 		fprintf(stderr, "Error load YUV file!\nPress ENTER to exit\n");
 		getchar();
-		exit(-1);
+		std::exit(-1);
 	}
 }
 
