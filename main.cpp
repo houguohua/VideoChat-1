@@ -96,7 +96,7 @@ void serverYUV(){
 
 		rc = zmq_recv(socket, img, (int)recv_size, 0);
 
-		x265_nal *pp_nal = (x265_nal*) malloc(sizeof(pp_nal));
+		x265_nal *pp_nal = new x265_nal(); /*(x265_nal*)malloc(sizeof(pp_nal));*/
 		pp_nal->sizeBytes = (int)recv_size;
 		pp_nal->payload = img;
 
@@ -105,13 +105,15 @@ void serverYUV(){
 
 		decodeFrame(pp_nal, decodedFrame, &decoded);
 
+		
+
 		if (decoded){
 			char* decodedText = imgDestegaMat(decodedFrame);
-			if (0!=strcmp(decodedText,"")){
+			if (strlen(decodedText)>0){
 				HANDLE hConsole;
 				hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 				SetConsoleTextAttribute(hConsole, 11);
-				cout << "Partner: " << imgDestegaMat(decodedFrame) << endl;
+				cout << "Partner: " << decodedText << endl;
 			}
 			
 			imshow("DecodeVideo", *decodedFrame);
@@ -120,6 +122,7 @@ void serverYUV(){
 		}
 		
 
+		
 		//bitstreamFile.write((const char*)img, (int)recv_size);
 
 
@@ -133,6 +136,8 @@ void serverYUV(){
 
 	}
 	//bitstreamFile.close();
+	/*free(recv_size);
+	free(img);*/
 	zmq_close(socket);
 	zmq_ctx_destroy(context);
 }
@@ -201,8 +206,6 @@ void captureToYuv(){
 
 		resize(readIn, frame, Size(160, 120), 0, 0, INTER_CUBIC);
 
-		
-
 		if (written){
 			HANDLE hConsole;
 			hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -211,9 +214,12 @@ void captureToYuv(){
 			imgStegaMat(&frame, text);
 			written = false;
 		}
+		else{
+			imgStegaMat(&frame, "   ");
+		}
 
-		cvtColor(frame, frame, CV_BGR2YUV_I420);
 		
+		cvtColor(frame, frame, CV_BGR2YUV_I420);
 		
 		img_size = (frame.dataend - frame.datastart);
 		
@@ -228,9 +234,6 @@ void captureToYuv(){
 			for (uint32_t i = 0; i < pi_nal; i++)
 			{
 				//bitstreamFile.write((const char*)pp_nal->payload, pp_nal->sizeBytes);
-			
-				
-
 				//receive chunks of data
 
 				rc = zmq_send(socket, &pp_nal->sizeBytes, 8, 0);
@@ -265,86 +268,6 @@ void check_error(int val) {
 		getchar();
 		exit(-1);
 	}
-}
-
-IplImage * cvLoadImageYUV(char * name_file, int w, int h){
-
-	IplImage *py, *pu, *pv, *pu_big, *pv_big, *image;
-	int i, temp;
-
-	FILE * pf = fopen(name_file, "rb");
-	if (pf == NULL){
-		fprintf(stderr, "Error open file %s\nPress ENTER to exit\n", name_file);
-		getchar();
-		exit(-1);
-	}
-
-
-	py = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 1);
-	pu = cvCreateImage(cvSize(w / 2, h / 2), IPL_DEPTH_8U, 1);
-	pv = cvCreateImage(cvSize(w / 2, h / 2), IPL_DEPTH_8U, 1);
-
-	pu_big = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 1);
-	pv_big = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 1);
-
-	image = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
-
-	assert(py);
-	assert(pu);
-	assert(pv);
-	assert(pu_big);
-	assert(pv_big);
-	assert(image);
-
-	// Read Y
-	for (i = 0; i < w*h; i++){
-		temp = fgetc(pf);
-		check_error(temp);
-
-		py->imageData[i] = (unsigned char)temp;
-	}
-
-
-	// Read U
-	for (i = 0; i < w*h / 4; i++){
-		temp = fgetc(pf);
-		check_error(temp);
-
-		pu->imageData[i] = (unsigned char)temp;
-	}
-
-
-
-	// Read V
-	for (i = 0; i < w*h / 4; i++){
-		temp = fgetc(pf);
-		check_error(temp);
-
-		pv->imageData[i] = (unsigned char)temp;
-	}
-
-	fclose(pf);
-
-	cvResize(pu, pu_big, CV_INTER_LINEAR);
-	cvResize(pv, pv_big, CV_INTER_LINEAR);
-
-
-
-	cvReleaseImage(&pu);
-	cvReleaseImage(&pv);
-
-
-
-	cvMerge(py, pu_big, pv_big, NULL, image);
-
-	cvReleaseImage(&py);
-	cvReleaseImage(&pu_big);
-	cvReleaseImage(&pv_big);
-
-
-
-	return image;
-
 }
 
 
