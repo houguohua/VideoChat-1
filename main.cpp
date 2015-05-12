@@ -34,7 +34,7 @@ char* text = "";
 
 
 bool encode = false;
-bool resize = false;
+bool resizeVideo = false;
 
 int la = 6;
 int qp = 5; 
@@ -353,14 +353,27 @@ void yuvDemoStegano(){
 int main(int argc, char** argv){
 
 	if (argc < 2){
-		std::cout << "Usage: VideoChat.exe <Encode: true or false> [<resize video true or fasle> <lookahead buffers> <qp> <bframes> <keyint> <minkeyint> <Bit to change>]" << endl;;
+		std::cout << "Usage: VideoChat.exe <Encode: true or false> [<resize video true or fasle> <lookahead buffers> <qp> <bframes> <keyint> <minkeyint> <Bit to change>]" << endl;
+		getchar();
+		exit(0);
 	}
 
 	if ((argc > 2 && argc < 9)||(argc > 9)){
 		std::cout << "Usage: VideoChat.exe <Encode: true or false> [<resize video true or fasle> <lookahead buffers> <qp> <bframes> <keyint> <minkeyint>]" << endl;
+		getchar();
+		exit(0);
+	}
+	else if (argc == 2){
+		encode = (0!=strcmp("true", argv[2]));
 	}
 	else{
-		encode = (!strcmp("true", argv[2]));
+		encode = (0!=strcmp("true", argv[2]));
+
+		resizeVideo = (0!=strcmp("true", argv[3]));
+
+
+
+
 
 		for (int i = 0; i < argc; i++){
 			std::cout << "arg" << i << "=" << argv[i] << endl;
