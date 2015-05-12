@@ -4,9 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "SteganoRaw.h"
-#include "encoder.h"
-#include "yuv.h"
-#include "param.h"
 
 using namespace cv;
 using namespace std;
@@ -17,7 +14,7 @@ class EncoderInterface{
 public:
 	virtual void initEncoder(int width, int height) = 0;
 
-	virtual void encodeFrame(cv::Mat* frame) = 0;
+	virtual void encodeFrame(Mat* frame) = 0;
 
 protected:
 	int frame_width;

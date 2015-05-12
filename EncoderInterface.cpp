@@ -1,9 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "SteganoRaw.h"
-#include "encoder.h"
-#include "yuv.h"
-#include "param.h"
 #include "EncoderInterface.h"
 
 

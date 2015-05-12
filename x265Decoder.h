@@ -1,13 +1,23 @@
 #ifndef X265DECODER_H
 #define X265DECODER_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "SteganoRaw.h"
 #include "encoder.h"
+#include "SteganoRaw.h"
 #include "DecoderInterface.h"
-#include "yuv.h"
-#include "param.h"
+
+extern "C"
+{
+#include <libavutil/opt.h>
+#include <libavcodec/avcodec.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/common.h>
+#include <libavutil/imgutils.h>
+#include <libavutil/mathematics.h>
+#include <libavutil/samplefmt.h>
+#include <libswscale/swscale.h>
+}
+
+#pragma comment(lib, "avcodec.lib")
 
 
 using namespace std;

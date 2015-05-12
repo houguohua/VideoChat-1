@@ -117,7 +117,6 @@ void serverYUV(){
 				cout << "Partner: " << decodedText << endl;
 			}
 			
-			imshow("DecodeVideo", *decodedFrame);
 			if (waitKey(1) > 0)
 				break;
 		}

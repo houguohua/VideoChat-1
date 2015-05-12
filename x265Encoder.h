@@ -1,14 +1,10 @@
 #ifndef X265ENCODER_H
 #define X265ENCODER_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "SteganoRaw.h"
-#include "encoder.h"
 #include "EncoderInterface.h"
+#include "encoder.h"
 #include "yuv.h"
 #include "param.h"
-
 
 using namespace std;
 using namespace cv;
